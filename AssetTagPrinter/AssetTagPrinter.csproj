@@ -13,6 +13,7 @@
     <Reference Include="Microsoft.PointOfService">
       <HintPath>lib\Microsoft.PointOfService.dll</HintPath>
     </Reference>
+    <PackageReference Include="ZXing.Net" Version="0.16.9" />
   </ItemGroup>
 
   <ItemGroup>

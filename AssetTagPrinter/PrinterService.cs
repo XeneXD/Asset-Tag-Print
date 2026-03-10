@@ -34,16 +34,44 @@ namespace AssetTagPrinter
             string bold = "\x1b|bC";
             string cut = "\x1b|fP";
 
-            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}Your Logo - tiny\n");
+            // Header with logo
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}[Your Logo - tiny]\n");
 
-            // Print barcode
-            _printer.PrintBarCode(PrinterStation.Receipt, asset.Barcode, BarCodeSymbology.Code128, 100, _printer.RecLineWidth, PosPrinter.PrinterBarCodeLeft, BarCodeTextPosition.Below);
+            // Barcode as text (truncated to fit)
+            string barcodeText = TruncateBarcodeForPrint(asset.Barcode, 20);
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{barcodeText}\n");
 
-            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{bold}**ID: {asset.Ref}**\n\n");
+            // High density note
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}(High density)\n");
 
-            _printer.PrintNormal(PrinterStation.Receipt, $"{cut}");
+            // Print actual barcode
+            _printer.PrintBarCode(PrinterStation.Receipt, asset.Barcode, BarCodeSymbology.Code128, 80, _printer.RecLineWidth, PosPrinter.PrinterBarCodeCenter, BarCodeTextPosition.Below);
+
+            // ID line (truncated to fit)
+            string refText = TruncateBarcodeForPrint(asset.Ref, 18);
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{bold}**ID: {refText}**\n");
+
+            // Label line (if needed)
+            if (!string.IsNullOrEmpty(asset.Label))
+            {
+                string labelText = TruncateBarcodeForPrint(asset.Label, 20);
+                _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{labelText}\n");
+            }
+
+            _printer.PrintNormal(PrinterStation.Receipt, $"\n{cut}");
 
             Console.WriteLine($"Printed asset tag for: {asset.Label}");
+        }
+
+        private string TruncateBarcodeForPrint(string text, int maxLength)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            if (text.Length > maxLength)
+                return text.Substring(0, maxLength - 2) + "..";
+
+            return text;
         }
 
         public void Close()
