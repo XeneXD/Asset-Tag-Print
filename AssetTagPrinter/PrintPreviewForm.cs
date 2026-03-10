@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using ZXing;
-using ZXing.Common;
 
 namespace AssetTagPrinter
 {
@@ -62,28 +60,9 @@ namespace AssetTagPrinter
                     g.DrawString(asset.Barcode, mediumFont, blackBrush, 10, yPos);
                     yPos += 25;
 
-                    // Generate real Code128 barcode using ZXing
-                    try
-                    {
-                        var writer = new BarcodeWriter<Bitmap>
-                        {
-                            Format = BarcodeFormat.CODE_128,
-                            Options = new EncodingOptions { Width = 240, Height = 60, Margin = 0 }
-                        };
-
-                        Bitmap barcodeBitmap = writer.Write(asset.Barcode);
-                        if (barcodeBitmap != null)
-                        {
-                            g.DrawImage(barcodeBitmap, 20, yPos, 240, 60);
-                            yPos += 65;
-                        }
-                    }
-                    catch
-                    {
-                        // Fallback to simple lines if barcode generation fails
-                        DrawSimpleBarcodeLines(g, yPos);
-                        yPos += 50;
-                    }
+                    g.DrawRectangle(Pens.Black, 20, yPos, 240, 60);
+                    g.DrawString("Barcode generated at print time", smallFont, blackBrush, 55, yPos + 24);
+                    yPos += 65;
 
                     // High density note
                     g.DrawString("(High density)", smallFont, blackBrush, 70, yPos);
@@ -116,17 +95,6 @@ namespace AssetTagPrinter
             catch (Exception ex)
             {
                 MessageBox.Show($"Error generating preview: {ex.Message}", "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-
-        private void DrawSimpleBarcodeLines(Graphics g, int yPos)
-        {
-            // Fallback simple barcode pattern
-            Random rand = new Random();
-            for (int i = 0; i < 30; i++)
-            {
-                int height = rand.Next(20, 40);
-                g.DrawLine(Pens.Black, 20 + i * 8, yPos, 20 + i * 8, yPos + height);
             }
         }
 
