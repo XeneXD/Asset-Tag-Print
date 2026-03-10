@@ -34,14 +34,16 @@ namespace AssetTagPrinter
             string bold = "\x1b|bC";
             string cut = "\x1b|fP";
 
-            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{bold}*** ASSET TAG ***\n\n");
-            _printer.PrintNormal(PrinterStation.Receipt, $"Item: {asset.ItemName}\n");
-            _printer.PrintNormal(PrinterStation.Receipt, $"SKU: {asset.SKU}\n");
-            _printer.PrintNormal(PrinterStation.Receipt, $"Price: ${asset.Price}\n\n");
-            _printer.PrintNormal(PrinterStation.Receipt, "-----------------\n");
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}Your Logo - tiny\n");
+
+            // Print barcode
+            _printer.PrintBarcode(PrinterStation.Receipt, asset.Barcode, BarcodeSymbology.Code128, 100, _printer.RecLineWidth, PosPrinter.PrinterBarCodeLeft, BarcodeTextPosition.Below);
+
+            _printer.PrintNormal(PrinterStation.Receipt, $"{normal}{center}{bold}**ID: {asset.Ref}**\n\n");
+
             _printer.PrintNormal(PrinterStation.Receipt, $"{cut}");
 
-            Console.WriteLine($"Printed asset tag for: {asset.ItemName}");
+            Console.WriteLine($"Printed asset tag for: {asset.Label}");
         }
 
         public void Close()
