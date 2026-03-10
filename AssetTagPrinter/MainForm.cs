@@ -14,11 +14,17 @@ namespace AssetTagPrinter
         {
             InitializeComponent();
             _csvService = new CsvService();
+            dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            // Form loads without automatically loading CSV
+            // Auto-load default CSV when available so the grid is populated on startup.
+            var defaultCsvPath = Path.Combine(AppContext.BaseDirectory, "data.csv");
+            if (File.Exists(defaultCsvPath))
+            {
+                LoadAssetsIntoGrid(defaultCsvPath);
+            }
         }
 
         private void btnLoadCsv_Click(object sender, EventArgs e)
@@ -32,10 +38,8 @@ namespace AssetTagPrinter
                 {
                     try
                     {
-                        var assets = _csvService.ReadAssets(openFileDialog.FileName).ToList();
-                        dataGridViewAssets.DataSource = new BindingSource { DataSource = assets };
-                        dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
-                        MessageBox.Show($"Successfully loaded {assets.Count} assets.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        var count = LoadAssetsIntoGrid(openFileDialog.FileName);
+                        MessageBox.Show($"Successfully loaded {count} assets.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
@@ -45,12 +49,28 @@ namespace AssetTagPrinter
             }
         }
 
-        private void DataGridViewAssets_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void DataGridViewAssets_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && dataGridViewAssets.Rows[e.RowIndex].DataBoundItem is Asset asset)
             {
                 UpdatePreviewPanel(asset);
             }
+        }
+
+        private int LoadAssetsIntoGrid(string csvPath)
+        {
+            var assets = _csvService.ReadAssets(csvPath).ToList();
+
+            // Reset binding to force DataGridView repaint when reloading another file.
+            dataGridViewAssets.DataSource = null;
+            dataGridViewAssets.DataSource = new BindingSource { DataSource = assets };
+
+            if (assets.Count > 0)
+            {
+                UpdatePreviewPanel(assets[0]);
+            }
+
+            return assets.Count;
         }
 
         private void UpdatePreviewPanel(Asset asset)

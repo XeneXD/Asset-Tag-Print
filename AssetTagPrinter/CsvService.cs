@@ -19,15 +19,20 @@ namespace AssetTagPrinter
             var lines = ReadAllLinesWithEncodingFallback(filePath).Skip(1); // Skip header
             foreach (var line in lines)
             {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
                 var values = line.Split(',');
-                if (values.Length >= 4)
+                if (values.Length >= 3 && int.TryParse(values[0], out var id))
                 {
                     yield return new Asset
                     {
-                        Id = int.Parse(values[0]),
+                        Id = id,
                         Ref = values[1],
                         Label = values[2],
-                        Barcode = values[3]
+                        Barcode = values.Length >= 4 ? values[3] : string.Empty
                     };
                 }
             }
