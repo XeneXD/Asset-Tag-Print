@@ -9,6 +9,8 @@ namespace AssetTagPrinter
         private System.Windows.Forms.Button btnPrintPreview;
         private System.Windows.Forms.Panel pnlTagPreview;
         private System.Windows.Forms.Label lblTagPreview;
+        private System.Windows.Forms.Label lblPrinterStatus;
+        private System.Windows.Forms.Button btnDiagnostics;
 
         protected override void Dispose(bool disposing)
         {
@@ -27,6 +29,8 @@ namespace AssetTagPrinter
             this.btnPrintPreview = new System.Windows.Forms.Button();
             this.pnlTagPreview = new System.Windows.Forms.Panel();
             this.lblTagPreview = new System.Windows.Forms.Label();
+            this.lblPrinterStatus = new System.Windows.Forms.Label();
+            this.btnDiagnostics = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewAssets)).BeginInit();
             this.pnlTagPreview.SuspendLayout();
             this.SuspendLayout();
@@ -48,6 +52,26 @@ namespace AssetTagPrinter
             this.btnLoadCsv.Text = "Load CSV";
             this.btnLoadCsv.UseVisualStyleBackColor = true;
             this.btnLoadCsv.Click += new System.EventHandler(this.btnLoadCsv_Click);
+            // 
+            // btnDiagnostics
+            // 
+            this.btnDiagnostics.Location = new System.Drawing.Point(138, 12);
+            this.btnDiagnostics.Name = "btnDiagnostics";
+            this.btnDiagnostics.Size = new System.Drawing.Size(120, 29);
+            this.btnDiagnostics.TabIndex = 6;
+            this.btnDiagnostics.Text = "Diagnostics";
+            this.btnDiagnostics.UseVisualStyleBackColor = true;
+            this.btnDiagnostics.Click += new System.EventHandler(this.btnDiagnostics_Click);
+            // 
+            // lblPrinterStatus
+            // 
+            this.lblPrinterStatus.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.lblPrinterStatus.Location = new System.Drawing.Point(138, 16);
+            this.lblPrinterStatus.Name = "lblPrinterStatus";
+            this.lblPrinterStatus.Size = new System.Drawing.Size(650, 20);
+            this.lblPrinterStatus.TabIndex = 5;
+            this.lblPrinterStatus.Text = "Printer: Checking...";
+            this.lblPrinterStatus.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // pnlTagPreview
             // 
@@ -77,7 +101,7 @@ namespace AssetTagPrinter
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(376, 43);
             this.btnPrint.TabIndex = 1;
-            this.btnPrint.Text = "Print All";
+            this.btnPrint.Text = "Print Selected (or All)";
             this.btnPrint.UseVisualStyleBackColor = true;
             this.btnPrint.Click += new System.EventHandler(this.btnPrint_Click);
             // 
@@ -96,6 +120,8 @@ namespace AssetTagPrinter
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.btnDiagnostics);
+            this.Controls.Add(this.lblPrinterStatus);
             this.Controls.Add(this.pnlTagPreview);
             this.Controls.Add(this.btnPrintPreview);
             this.Controls.Add(this.btnLoadCsv);

@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace AssetTagPrinter
@@ -9,22 +12,36 @@ namespace AssetTagPrinter
     {
         private PrinterService? _printerService;
         private CsvService _csvService;
+        private bool _isPrinting;
 
         public MainForm()
         {
             InitializeComponent();
             _csvService = new CsvService();
+            dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewAssets.MultiSelect = false;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            RefreshPrinterStatus();
+
             // Auto-load default CSV when available so the grid is populated on startup.
             var defaultCsvPath = Path.Combine(AppContext.BaseDirectory, "data.csv");
             if (File.Exists(defaultCsvPath))
             {
                 LoadAssetsIntoGrid(defaultCsvPath);
             }
+        }
+
+        private void RefreshPrinterStatus()
+        {
+            bool ready = PrinterService.TryGetPrinterStatus(out string status);
+
+            lblPrinterStatus.Text = $"Printer: {status}";
+            lblPrinterStatus.ForeColor = ready ? Color.DarkGreen : Color.DarkRed;
+            btnPrint.Enabled = !_isPrinting;
         }
 
         private void btnLoadCsv_Click(object sender, EventArgs e)
@@ -67,6 +84,8 @@ namespace AssetTagPrinter
 
             if (assets.Count > 0)
             {
+                dataGridViewAssets.ClearSelection();
+                dataGridViewAssets.Rows[0].Selected = true;
                 UpdatePreviewPanel(assets[0]);
             }
 
@@ -101,16 +120,30 @@ namespace AssetTagPrinter
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
+            if (_isPrinting)
+            {
+                return;
+            }
+
+            _isPrinting = true;
+            btnPrint.Enabled = false;
+            RefreshPrinterStatus();
+
             try
             {
+                var assetsToPrint = GetAssetsToPrint();
+                if (assetsToPrint.Count == 0)
+                {
+                    MessageBox.Show("No assets to print. Please load a CSV file first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
                 _printerService ??= new PrinterService();
                 _printerService.Open();
-                foreach (DataGridViewRow row in dataGridViewAssets.Rows)
+                foreach (var asset in assetsToPrint)
                 {
-                    if (row.DataBoundItem is Asset asset)
-                    {
-                        _printerService.PrintAssetTag(asset);
-                    }
+                    _printerService.PrintAssetTag(asset);
+                    Thread.Sleep(200);
                 }
             }
             catch (Exception ex)
@@ -120,6 +153,8 @@ namespace AssetTagPrinter
             finally
             {
                 _printerService?.Close();
+                _isPrinting = false;
+                RefreshPrinterStatus();
             }
         }
 
@@ -152,6 +187,34 @@ namespace AssetTagPrinter
             {
                 MessageBox.Show("Error generating preview: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private List<Asset> GetAssetsToPrint()
+        {
+            var selectedAssets = dataGridViewAssets.SelectedRows
+                .Cast<DataGridViewRow>()
+                .Select(row => row.DataBoundItem as Asset)
+                .Where(asset => asset != null)
+                .Cast<Asset>()
+                .ToList();
+
+            if (selectedAssets.Count > 0)
+            {
+                return selectedAssets;
+            }
+
+            return dataGridViewAssets.Rows
+                .Cast<DataGridViewRow>()
+                .Select(row => row.DataBoundItem as Asset)
+                .Where(asset => asset != null)
+                .Cast<Asset>()
+                .ToList();
+        }
+
+        private void btnDiagnostics_Click(object sender, EventArgs e)
+        {
+            string report = PrinterService.GetPrinterDiagnosticsReport();
+            MessageBox.Show(report, "Printer Diagnostics", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

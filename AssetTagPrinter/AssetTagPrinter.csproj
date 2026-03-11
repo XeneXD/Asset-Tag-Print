@@ -2,9 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <UseAppHost>true</UseAppHost>
     <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -13,6 +14,7 @@
     <Reference Include="Microsoft.PointOfService">
       <HintPath>lib\Microsoft.PointOfService.dll</HintPath>
     </Reference>
+    <Reference Include="System.Management" />
     <PackageReference Include="ZXing.Net" Version="0.16.9" />
   </ItemGroup>
 

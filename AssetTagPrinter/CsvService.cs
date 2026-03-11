@@ -14,8 +14,6 @@ namespace AssetTagPrinter
                 throw new FileNotFoundException("CSV file not found.", filePath);
             }
 
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
             var lines = ReadAllLinesWithEncodingFallback(filePath).Skip(1); // Skip header
             foreach (var line in lines)
             {
