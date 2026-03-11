@@ -19,6 +19,8 @@ This is a Windows Forms application for printing asset tags based on data from a
 
 ## Usage
 
-1.  Build and run the project.
-2.  The main window will display the assets from the CSV file.
-3.  Click the "Print All" button to print the asset tags.
+1. Build and run the project.
+2. Click the "Load CSV" button to open a file browser and select your data source. The main window will display the assets from the CSV file.
+3. Click on a specific row in the Data Grid. The side panel will automatically display a mockup of that asset's data.
+4. Click the "Print Preview" button to see how the exact placement of text and barcode as it will appear on the physical paper.
+5. Click the "Print All" button to print the asset tags.
