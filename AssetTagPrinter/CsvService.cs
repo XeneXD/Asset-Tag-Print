@@ -14,26 +14,95 @@ namespace AssetTagPrinter
                 throw new FileNotFoundException("CSV file not found.", filePath);
             }
 
-            var lines = ReadAllLinesWithEncodingFallback(filePath).Skip(1); // Skip header
-            foreach (var line in lines)
+            var allLines = ReadAllLinesWithEncodingFallback(filePath);
+            if (allLines.Length == 0)
+            {
+                yield break;
+            }
+
+            // Header-aware parsing to support different CSV exports (e.g. "Ref." and "Default warehouse").
+            var headerValues = SplitCsvSimple(allLines[0]);
+            var headerIndex = headerValues
+                .Select((name, idx) => new { name = (name ?? string.Empty).Trim(), idx })
+                .Where(x => !string.IsNullOrWhiteSpace(x.name))
+                .GroupBy(x => x.name, System.StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().idx, System.StringComparer.OrdinalIgnoreCase);
+
+            int idIndex = GetIndex(headerIndex, "Id", "ID");
+            int refIndex = GetIndex(headerIndex, "Ref", "Ref.", "Reference", "Asset Ref");
+            int labelIndex = GetIndex(headerIndex, "Label", "Name", "Product", "Product name");
+            int barcodeIndex = GetIndex(headerIndex, "Barcode", "Bar code", "BarCode");
+            int warehouseIndex = GetIndex(headerIndex, "Default warehouse", "Warehouse", "Default Warehouse");
+
+            // Fallback for the simple 4-column CSV: Id,Ref,Label,Barcode
+            if (idIndex < 0) idIndex = 0;
+            if (refIndex < 0) refIndex = 1;
+            if (labelIndex < 0) labelIndex = 2;
+            if (barcodeIndex < 0) barcodeIndex = 3;
+
+            foreach (var line in allLines.Skip(1))
             {
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
 
-                var values = line.Split(',');
-                if (values.Length >= 3 && int.TryParse(values[0], out var id))
+                var values = SplitCsvSimple(line);
+                if (values.Length <= System.Math.Max(2, idIndex))
                 {
-                    yield return new Asset
-                    {
-                        Id = id,
-                        Ref = values[1],
-                        Label = values[2],
-                        Barcode = values.Length >= 4 ? values[3] : string.Empty
-                    };
+                    continue;
+                }
+
+                if (!TryGet(values, idIndex, out var idText) || !int.TryParse(idText, out var id))
+                {
+                    continue;
+                }
+
+                yield return new Asset
+                {
+                    Id = id,
+                    Ref = GetOrEmpty(values, refIndex),
+                    Label = GetOrEmpty(values, labelIndex),
+                    Barcode = GetOrEmpty(values, barcodeIndex),
+                    Warehouse = warehouseIndex >= 0 ? GetOrEmpty(values, warehouseIndex) : string.Empty
+                };
+            }
+        }
+
+        private static int GetIndex(Dictionary<string, int> headerIndex, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (headerIndex.TryGetValue(name, out var idx))
+                {
+                    return idx;
                 }
             }
+
+            return -1;
+        }
+
+        private static bool TryGet(string[] values, int index, out string text)
+        {
+            text = string.Empty;
+            if (index < 0 || index >= values.Length)
+            {
+                return false;
+            }
+
+            text = (values[index] ?? string.Empty).Trim();
+            return true;
+        }
+
+        private static string GetOrEmpty(string[] values, int index)
+        {
+            return TryGet(values, index, out var text) ? text : string.Empty;
+        }
+
+        // Keeps existing behavior (no quoted-field parsing) but centralizes it for easier upgrades later.
+        private static string[] SplitCsvSimple(string line)
+        {
+            return (line ?? string.Empty).Split(',');
         }
 
         private static string[] ReadAllLinesWithEncodingFallback(string filePath)

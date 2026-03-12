@@ -13,14 +13,75 @@ namespace AssetTagPrinter
         private PrinterService? _printerService;
         private CsvService _csvService;
         private bool _isPrinting;
+        private List<Asset> _loadedAssets = new List<Asset>();
 
         public MainForm()
         {
             InitializeComponent();
             _csvService = new CsvService();
             dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridViewAssets.MultiSelect = false;
+            dataGridViewAssets.MultiSelect = true;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
+            KeyPreview = true;
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.O))
+            {
+                btnLoadCsv?.PerformClick();
+                return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.P))
+            {
+                btnPrint?.PerformClick();
+                return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.Shift | Keys.P))
+            {
+                btnPrintPreview?.PerformClick();
+                return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.D))
+            {
+                btnDiagnostics?.PerformClick();
+                return true;
+            }
+
+            if (keyData == Keys.F1)
+            {
+                btnHelp?.PerformClick();
+                return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.W))
+            {
+                if (cmbWarehouse != null && cmbWarehouse.CanFocus)
+                {
+                    cmbWarehouse.Focus();
+                }
+                return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.L))
+            {
+                if (chkLimitLoad != null)
+                {
+                    chkLimitLoad.Checked = !chkLimitLoad.Checked;
+                }
+
+                if (nudLoadLimit != null && nudLoadLimit.CanFocus)
+                {
+                    nudLoadLimit.Focus();
+                }
+
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -77,6 +138,15 @@ namespace AssetTagPrinter
         private int LoadAssetsIntoGrid(string csvPath)
         {
             var assets = _csvService.ReadAssets(csvPath).ToList();
+            int total = assets.Count;
+
+            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked && total > (int)nudLoadLimit.Value)
+            {
+                assets = assets.Take((int)nudLoadLimit.Value).ToList();
+            }
+
+            _loadedAssets = assets;
+            PopulateWarehouseFilter(_loadedAssets);
 
             // Reset binding to force DataGridView repaint when reloading another file.
             dataGridViewAssets.DataSource = null;
@@ -90,6 +160,70 @@ namespace AssetTagPrinter
             }
 
             return assets.Count;
+        }
+
+        private void PopulateWarehouseFilter(List<Asset> assets)
+        {
+            if (cmbWarehouse == null)
+            {
+                return;
+            }
+
+            string current = cmbWarehouse.SelectedItem as string ?? "All";
+            var warehouses = assets
+                .Select(a => (a.Warehouse ?? string.Empty).Trim())
+                .Where(w => !string.IsNullOrWhiteSpace(w))
+                .Distinct(System.StringComparer.OrdinalIgnoreCase)
+                .OrderBy(w => w)
+                .ToList();
+
+            cmbWarehouse.BeginUpdate();
+            try
+            {
+                cmbWarehouse.Items.Clear();
+                cmbWarehouse.Items.Add("All");
+                foreach (var w in warehouses)
+                {
+                    cmbWarehouse.Items.Add(w);
+                }
+
+                int idx = cmbWarehouse.Items.IndexOf(current);
+                cmbWarehouse.SelectedIndex = idx >= 0 ? idx : 0;
+            }
+            finally
+            {
+                cmbWarehouse.EndUpdate();
+            }
+        }
+
+        private void ApplyWarehouseFilter()
+        {
+            if (cmbWarehouse == null)
+            {
+                return;
+            }
+
+            string selected = cmbWarehouse.SelectedItem as string ?? "All";
+            IEnumerable<Asset> view = _loadedAssets;
+            if (!string.Equals(selected, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selected, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var list = view.ToList();
+            dataGridViewAssets.DataSource = null;
+            dataGridViewAssets.DataSource = new BindingSource { DataSource = list };
+
+            if (list.Count > 0)
+            {
+                dataGridViewAssets.ClearSelection();
+                dataGridViewAssets.Rows[0].Selected = true;
+                UpdatePreviewPanel(list[0]);
+            }
+            else
+            {
+                lblTagPreview.Text = string.Empty;
+            }
         }
 
         private void UpdatePreviewPanel(Asset asset)
@@ -172,6 +306,7 @@ namespace AssetTagPrinter
         {
             var selectedAssets = dataGridViewAssets.SelectedRows
                 .Cast<DataGridViewRow>()
+                .OrderBy(r => r.Index)
                 .Select(row => row.DataBoundItem as Asset)
                 .Where(asset => asset != null)
                 .Cast<Asset>()
@@ -194,6 +329,19 @@ namespace AssetTagPrinter
         {
             string report = PrinterService.GetPrinterDiagnosticsReport();
             MessageBox.Show(report, "Printer Diagnostics", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void btnHelp_Click(object sender, EventArgs e)
+        {
+            using (var help = new HelpUpdatesForm())
+            {
+                help.ShowDialog(this);
+            }
+        }
+
+        private void cmbWarehouse_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyWarehouseFilter();
         }
     }
 }
