@@ -358,16 +358,9 @@ namespace AssetTagPrinter
 
             string nl = "\r\n";
             string barcodeValue = (asset.Barcode ?? string.Empty).Trim();
+            var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset);
 
-            // Header with logo
-            _printer.PrintNormal(PrinterStation.Receipt, $"[Your Logo - tiny]{nl}");
-
-            // Barcode as text (truncated to fit)
-            string barcodeText = TruncateBarcodeForPrint(barcodeValue, 20);
-            _printer.PrintNormal(PrinterStation.Receipt, $"{barcodeText}{nl}");
-
-            // High density note
-            _printer.PrintNormal(PrinterStation.Receipt, $"(High density){nl}");
+            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(5)) + nl);
 
             // Print actual barcode
             if (!string.IsNullOrWhiteSpace(barcodeValue))
@@ -398,18 +391,7 @@ namespace AssetTagPrinter
                 _printer.PrintNormal(PrinterStation.Receipt, $"(No barcode){nl}");
             }
 
-            // ID line (truncated to fit)
-            string refText = TruncateBarcodeForPrint(asset.Ref, 18);
-            _printer.PrintNormal(PrinterStation.Receipt, $"ID: {refText}{nl}");
-
-            // Label line (if needed)
-            if (!string.IsNullOrEmpty(asset.Label))
-            {
-                string labelText = TruncateBarcodeForPrint(asset.Label, 20);
-                _printer.PrintNormal(PrinterStation.Receipt, $"{labelText}{nl}");
-            }
-
-            _printer.PrintNormal(PrinterStation.Receipt, nl);
+            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Skip(5)) + nl + nl);
 
             Console.WriteLine($"Printed asset tag for: {asset.Label}");
         }
@@ -433,26 +415,13 @@ namespace AssetTagPrinter
                 document.PrintPage += (sender, e) =>
                 {
                     using (Font normal = new Font("Consolas", 9))
-                    using (Font bold = new Font("Consolas", 10, FontStyle.Bold))
                     {
                         float y = 10;
-                        e.Graphics.DrawString("[Your Logo - tiny]", normal, Brushes.Black, 10, y);
-                        y += 20;
-
-                        string barcodeText = TruncateBarcodeForPrint((asset.Barcode ?? string.Empty).Trim(), 24);
-                        e.Graphics.DrawString(barcodeText, normal, Brushes.Black, 10, y);
-                        y += 20;
-
-                        e.Graphics.DrawString("(High density)", normal, Brushes.Black, 10, y);
-                        y += 20;
-
-                        string refText = TruncateBarcodeForPrint(asset.Ref, 24);
-                        e.Graphics.DrawString($"ID: {refText}", bold, Brushes.Black, 10, y);
-                        y += 24;
-
-                        if (!string.IsNullOrWhiteSpace(asset.Label))
+                        float lineHeight = normal.GetHeight(e.Graphics) + 2;
+                        foreach (string line in TagLayoutFormatter.BuildPosReceiptLines(asset))
                         {
-                            e.Graphics.DrawString(TruncateBarcodeForPrint(asset.Label, 28), normal, Brushes.Black, 10, y);
+                            e.Graphics.DrawString(line, normal, Brushes.Black, 10, y);
+                            y += lineHeight;
                         }
 
                         e.HasMorePages = false;
@@ -461,17 +430,6 @@ namespace AssetTagPrinter
 
                 document.Print();
             }
-        }
-
-        private string TruncateBarcodeForPrint(string text, int maxLength)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-
-            if (text.Length > maxLength)
-                return text.Substring(0, maxLength - 2) + "..";
-
-            return text;
         }
 
         public void Close()

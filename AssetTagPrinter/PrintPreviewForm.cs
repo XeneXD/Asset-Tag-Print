@@ -33,56 +33,27 @@ namespace AssetTagPrinter
         {
             try
             {
-                // Create a bitmap to draw the preview
                 Bitmap previewBitmap = new Bitmap(280, 400);
                 using (Graphics g = Graphics.FromImage(previewBitmap))
                 {
                     g.Clear(Color.White);
                     g.DrawRectangle(Pens.Black, 0, 0, 279, 399);
 
-                    // Font sizes
-                    Font smallFont = new Font("Arial", 7);
-                    Font mediumFont = new Font("Arial", 8, FontStyle.Bold);
-                    Font largeFont = new Font("Arial", 9, FontStyle.Bold);
+                    using Font monoFont = new Font("Consolas", 8);
                     Brush blackBrush = Brushes.Black;
+                    var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
 
                     int yPos = 10;
 
-                    // Logo placeholder
-                    g.DrawString("[Your Logo - tiny]", smallFont, blackBrush, 20, yPos);
-                    yPos += 20;
+                    foreach (var line in lines)
+                    {
+                        g.DrawString(line, monoFont, blackBrush, 10, yPos);
+                        yPos += 14;
+                    }
 
-                    // Divider line
-                    g.DrawLine(Pens.Black, 5, yPos, 275, yPos);
                     yPos += 10;
-
-                    // Barcode number text
-                    g.DrawString(asset.Barcode, mediumFont, blackBrush, 10, yPos);
-                    yPos += 25;
-
                     g.DrawRectangle(Pens.Black, 20, yPos, 240, 60);
-                    g.DrawString("Barcode generated at print time", smallFont, blackBrush, 55, yPos + 24);
-                    yPos += 65;
-
-                    // High density note
-                    g.DrawString("(High density)", smallFont, blackBrush, 70, yPos);
-                    yPos += 20;
-
-                    // Divider line
-                    g.DrawLine(Pens.Black, 5, yPos, 275, yPos);
-                    yPos += 10;
-
-                    // ID and Reference
-                    g.DrawString($"**ID: {asset.Ref}**", largeFont, blackBrush, 10, yPos);
-                    yPos += 25;
-
-                    // Label
-                    string label = asset.Label.Length > 30 ? asset.Label.Substring(0, 27) + "..." : asset.Label;
-                    g.DrawString(label, mediumFont, blackBrush, 10, yPos);
-                    yPos += 25;
-
-                    // Bottom divider
-                    g.DrawLine(Pens.Black, 5, yPos, 275, yPos);
+                    g.DrawString("Barcode generated at print time", monoFont, blackBrush, 42, yPos + 24);
 
                     // Draw cut line (dashed)
                     Pen dashedPen = new Pen(Color.Red) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };

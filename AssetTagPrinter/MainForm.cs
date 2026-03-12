@@ -94,28 +94,7 @@ namespace AssetTagPrinter
 
         private void UpdatePreviewPanel(Asset asset)
         {
-            // Truncate barcode to fit, but keep full reference ID
-            string barcode = TruncateText(asset.Barcode, 16);
-
-            lblTagPreview.Text = $"┌────────────────────┐\n" +
-                                 $"│ [Your Logo-tiny] │\n" +
-                                 $"├────────────────────┤\n" +
-                                 $"│ {barcode.PadRight(16)} │\n" +
-                                 $"│  (High density)  │\n" +
-                                 $"├────────────────────┤\n" +
-                                 $"│ ID: {asset.Ref}    │\n" +
-                                 $"└────────────────────┘";
-        }
-
-        private string TruncateText(string text, int maxLength)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-
-            if (text.Length > maxLength)
-                return text.Substring(0, maxLength - 2) + "..";
-
-            return text;
+            lblTagPreview.Text = TagLayoutFormatter.BuildMainPreviewText(asset);
         }
 
         private void btnPrint_Click(object sender, EventArgs e)
