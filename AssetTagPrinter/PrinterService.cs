@@ -364,7 +364,8 @@ namespace AssetTagPrinter
 
             string nl = "\r\n";
             string barcodeValue = (asset.Barcode ?? string.Empty).Trim();
-            var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset);
+            int receiptWidth = GetReceiptTextWidth();
+            var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset, receiptWidth);
 
             _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(4)) + nl);
 
@@ -400,6 +401,29 @@ namespace AssetTagPrinter
             _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Skip(4)) + nl + nl);
 
             Console.WriteLine($"Printed asset tag for: {asset.Label}");
+        }
+
+        private int GetReceiptTextWidth()
+        {
+            if (_printer == null)
+            {
+                return TagLayoutFormatter.ReceiptWidth;
+            }
+
+            try
+            {
+                int deviceWidth = _printer.RecLineChars;
+                if (deviceWidth > 0)
+                {
+                    // Keep width in a practical range for common 58/80mm receipt printers.
+                    return Math.Max(TagLayoutFormatter.ReceiptWidth, Math.Min(deviceWidth, 64));
+                }
+            }
+            catch
+            {
+            }
+
+            return TagLayoutFormatter.ReceiptWidth;
         }
 
         public void CutBetweenTags()

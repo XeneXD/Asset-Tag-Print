@@ -38,27 +38,33 @@ namespace AssetTagPrinter
 
         public static IReadOnlyList<string> BuildPosReceiptLines(Asset asset)
         {
-            string refText = Truncate($"ID: {asset.Ref}", ReceiptWidth - 2);
-            string label = Truncate(asset.Label, ReceiptWidth - 2);
+            return BuildPosReceiptLines(asset, ReceiptWidth);
+        }
+
+        public static IReadOnlyList<string> BuildPosReceiptLines(Asset asset, int receiptWidth)
+        {
+            int width = Math.Max(24, receiptWidth);
+            string refText = Truncate($"ID: {asset.Ref}", width - 2);
+            string label = Truncate(asset.Label, width - 2);
 
             var lines = new List<string>
             {
-                Divider('=', ReceiptWidth),
-                Center("[Company Name]", ReceiptWidth),
-                Center("[Company Address]", ReceiptWidth),
-                Center("[Company Contact #]", ReceiptWidth),
-                Divider('-', ReceiptWidth),
-                /*Center("(High density)", ReceiptWidth),*/
-                Divider('-', ReceiptWidth),
-                Center(refText, ReceiptWidth)
+                Divider('=', width),
+                Center("[Company Name]", width),
+                Center("[Company Address]", width),
+                Center("[Company Contact #]", width),
+                Divider('-', width),
+                /*Center("(High density)", width),*/
+                Divider('-', width),
+                Center(refText, width)
             };
 
             if (!string.IsNullOrWhiteSpace(label))
             {
-                lines.Add(Center(label, ReceiptWidth));
+                lines.Add(Center(label, width));
             }
 
-            lines.Add(Divider('=', ReceiptWidth));
+            lines.Add(Divider('=', width));
             return lines;
         }
 
@@ -96,7 +102,7 @@ namespace AssetTagPrinter
             }
 
             int left = (width - text.Length) / 2;
-            return new string(' ', left) + text;
+            return (new string(' ', left) + text).PadRight(width);
         }
 
         private static string Divider(char c, int width)
