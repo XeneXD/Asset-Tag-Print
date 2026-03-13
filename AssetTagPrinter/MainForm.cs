@@ -22,6 +22,8 @@ namespace AssetTagPrinter
             dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewAssets.MultiSelect = true;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
+            chkLimitLoad.CheckedChanged += FilterControlsChanged;
+            nudLoadLimit.ValueChanged += FilterControlsChanged;
             KeyPreview = true;
         }
 
@@ -138,28 +140,9 @@ namespace AssetTagPrinter
         private int LoadAssetsIntoGrid(string csvPath)
         {
             var assets = _csvService.ReadAssets(csvPath).ToList();
-            int total = assets.Count;
-
-            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked && total > (int)nudLoadLimit.Value)
-            {
-                assets = assets.Take((int)nudLoadLimit.Value).ToList();
-            }
-
             _loadedAssets = assets;
             PopulateWarehouseFilter(_loadedAssets);
-
-            // Reset binding to force DataGridView repaint when reloading another file.
-            dataGridViewAssets.DataSource = null;
-            dataGridViewAssets.DataSource = new BindingSource { DataSource = assets };
-
-            if (assets.Count > 0)
-            {
-                dataGridViewAssets.ClearSelection();
-                dataGridViewAssets.Rows[0].Selected = true;
-                UpdatePreviewPanel(assets[0]);
-            }
-
-            return assets.Count;
+            return ApplyWarehouseFilter();
         }
 
         private void PopulateWarehouseFilter(List<Asset> assets)
@@ -196,15 +179,21 @@ namespace AssetTagPrinter
             }
         }
 
-        private void ApplyWarehouseFilter()
+        private int ApplyWarehouseFilter()
         {
             if (cmbWarehouse == null)
             {
-                return;
+                return 0;
+            }
+
+            IEnumerable<Asset> view = _loadedAssets;
+
+            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked)
+            {
+                view = view.Take((int)nudLoadLimit.Value);
             }
 
             string selected = cmbWarehouse.SelectedItem as string ?? "All";
-            IEnumerable<Asset> view = _loadedAssets;
             if (!string.Equals(selected, "All", StringComparison.OrdinalIgnoreCase))
             {
                 view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selected, StringComparison.OrdinalIgnoreCase));
@@ -224,6 +213,18 @@ namespace AssetTagPrinter
             {
                 lblTagPreview.Text = string.Empty;
             }
+
+            return list.Count;
+        }
+
+        private void FilterControlsChanged(object? sender, EventArgs e)
+        {
+            if (_loadedAssets.Count == 0)
+            {
+                return;
+            }
+
+            ApplyWarehouseFilter();
         }
 
         private void UpdatePreviewPanel(Asset asset)
