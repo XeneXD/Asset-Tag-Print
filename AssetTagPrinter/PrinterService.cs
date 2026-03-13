@@ -344,6 +344,9 @@ namespace AssetTagPrinter
             _printer.Open();
             _printer.Claim(1000);
             _printer.DeviceEnabled = true;
+
+            // Process print commands synchronously to avoid delayed queued output.
+            _printer.AsyncMode = false;
         }
 
         public void PrintAssetTag(Asset asset)

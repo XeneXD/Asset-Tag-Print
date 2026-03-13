@@ -22,6 +22,10 @@ namespace AssetTagPrinter
             _csvService = new CsvService();
             dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewAssets.MultiSelect = true;
+            dataGridViewAssets.ReadOnly = true;
+            dataGridViewAssets.AllowUserToAddRows = false;
+            dataGridViewAssets.AllowUserToDeleteRows = false;
+            dataGridViewAssets.AllowUserToOrderColumns = false;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
             chkLimitLoad.CheckedChanged += FilterControlsChanged;
             nudLoadLimit.ValueChanged += FilterControlsChanged;
