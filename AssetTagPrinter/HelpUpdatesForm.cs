@@ -114,25 +114,33 @@ Keyboard shortcuts
 - F1: Help / Updates
 - Ctrl+W: Focus Warehouse filter
 - Ctrl+L: Toggle load limit + focus limit value
+- Enter: M1-like action on focused filter controls (toggle Limit checkbox, apply Warehouse/Limit)
 - Esc: Close this Help window
 
 CSV format (current)
 - The app expects a header row, then data rows.
-- Columns are read by position:
-  0 = Id (must be a number)
-  1 = Ref
-  2 = Label
-  3 = Barcode (optional)
+- Header names are used when available (e.g. Ref., Label, Barcode, Default warehouse).
+- Fallback for simple files without matching headers:
+    0 = Id (must be a number)
+    1 = Ref
+    2 = Label
+    3 = Barcode (optional)
 
 Tips
 - If the printer status says USB detected but not installed, install the POS/Windows driver so it appears as a printer queue or POS device.
-- If labels look cut off, reduce label text length or adjust the printer's paper/width settings.";
+- If labels look cut off, reduce label text length or adjust the printer's paper/width settings.
+- Warehouse dropdown includes a ""(Blank Warehouse)"" option when empty warehouse values exist in the CSV.";
         }
 
         private static string GetUpdateLogText()
         {
             return
 @"Update log
+- CSV parsing now supports quoted fields (commas inside text no longer shift columns).
+- Warehouse filter now runs before load-limit (limit no longer gate-keeps matching rows).
+- Enter key now applies Warehouse/Limit filters for keyboard users.
+- Enter key now toggles the Limit checkbox when focused (M1-like behavior).
+- Warehouse dropdown now supports filtering rows where warehouse is blank.
 - POS/Windows printing support and preview.
 - Preview and printing share the same line layout builder (so they match).
 - Multi-row selection enabled for printing (select multiple rows to print in order).

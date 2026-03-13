@@ -10,6 +10,7 @@ namespace AssetTagPrinter
 {
     public partial class MainForm : Form
     {
+        private const string BlankWarehouseOption = "(Blank Warehouse)";
         private PrinterService? _printerService;
         private CsvService _csvService;
         private bool _isPrinting;
@@ -83,6 +84,32 @@ namespace AssetTagPrinter
                 return true;
             }
 
+            if (keyData == Keys.Enter)
+            {
+                if (chkLimitLoad != null && chkLimitLoad.Focused)
+                {
+                    chkLimitLoad.Checked = !chkLimitLoad.Checked;
+                    return true;
+                }
+
+                if (cmbWarehouse != null && (cmbWarehouse.Focused || cmbWarehouse.DroppedDown))
+                {
+                    if (cmbWarehouse.DroppedDown)
+                    {
+                        cmbWarehouse.DroppedDown = false;
+                    }
+
+                    ApplyWarehouseFilter();
+                    return true;
+                }
+
+                if (nudLoadLimit != null && nudLoadLimit.Focused)
+                {
+                    ApplyWarehouseFilter();
+                    return true;
+                }
+            }
+
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
@@ -153,6 +180,7 @@ namespace AssetTagPrinter
             }
 
             string current = cmbWarehouse.SelectedItem as string ?? "All";
+            bool hasBlankWarehouse = assets.Any(a => string.IsNullOrWhiteSpace(a.Warehouse));
             var warehouses = assets
                 .Select(a => (a.Warehouse ?? string.Empty).Trim())
                 .Where(w => !string.IsNullOrWhiteSpace(w))
@@ -165,6 +193,11 @@ namespace AssetTagPrinter
             {
                 cmbWarehouse.Items.Clear();
                 cmbWarehouse.Items.Add("All");
+                if (hasBlankWarehouse)
+                {
+                    cmbWarehouse.Items.Add(BlankWarehouseOption);
+                }
+
                 foreach (var w in warehouses)
                 {
                     cmbWarehouse.Items.Add(w);
@@ -188,15 +221,22 @@ namespace AssetTagPrinter
 
             IEnumerable<Asset> view = _loadedAssets;
 
-            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked)
-            {
-                view = view.Take((int)nudLoadLimit.Value);
-            }
-
             string selected = cmbWarehouse.SelectedItem as string ?? "All";
             if (!string.Equals(selected, "All", StringComparison.OrdinalIgnoreCase))
             {
-                view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selected, StringComparison.OrdinalIgnoreCase));
+                if (string.Equals(selected, BlankWarehouseOption, StringComparison.Ordinal))
+                {
+                    view = view.Where(a => string.IsNullOrWhiteSpace(a.Warehouse));
+                }
+                else
+                {
+                    view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selected, StringComparison.OrdinalIgnoreCase));
+                }
+            }
+
+            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked)
+            {
+                view = view.Take((int)nudLoadLimit.Value);
             }
 
             var list = view.ToList();

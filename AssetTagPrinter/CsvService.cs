@@ -102,7 +102,46 @@ namespace AssetTagPrinter
         // Keeps existing behavior (no quoted-field parsing) but centralizes it for easier upgrades later.
         private static string[] SplitCsvSimple(string line)
         {
-            return (line ?? string.Empty).Split(',');
+            if (string.IsNullOrEmpty(line))
+            {
+                return new[] { string.Empty };
+            }
+
+            var values = new List<string>();
+            var current = new StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                if (c == '"')
+                {
+                    if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = !inQuotes;
+                    }
+
+                    continue;
+                }
+
+                if (c == ',' && !inQuotes)
+                {
+                    values.Add(current.ToString());
+                    current.Clear();
+                    continue;
+                }
+
+                current.Append(c);
+            }
+
+            values.Add(current.ToString());
+            return values.ToArray();
         }
 
         private static string[] ReadAllLinesWithEncodingFallback(string filePath)
