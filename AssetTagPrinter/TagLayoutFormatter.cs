@@ -7,6 +7,9 @@ namespace AssetTagPrinter
     {
         public const int PreviewInnerWidth = 20;
         public const int ReceiptWidth = 32;
+        private const string CompanyName = "Yoshii Software Solution Philippines";
+        private const string CompanyAddress = "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City";
+        private const string CompanyContact = "(032) 254-0302";
 
         public static string BuildMainPreviewText(Asset asset)
         {
@@ -17,9 +20,9 @@ namespace AssetTagPrinter
             var lines = new List<string>
             {
                 BoxTop(PreviewInnerWidth),
-                BoxLine("[Company Name]", PreviewInnerWidth),
-                BoxLine("[Company Address]", PreviewInnerWidth),
-                BoxLine("[Company Contact #]", PreviewInnerWidth),
+                BoxLine(CompanyName, PreviewInnerWidth),
+                BoxLine(CompanyAddress, PreviewInnerWidth),
+                BoxLine(CompanyContact, PreviewInnerWidth),
                 BoxDivider(PreviewInnerWidth),
                 BoxLine(barcode, PreviewInnerWidth),
                 /*BoxLine("(High density)", PreviewInnerWidth),*/
@@ -50,9 +53,9 @@ namespace AssetTagPrinter
             var lines = new List<string>
             {
                 Divider('=', width),
-                Center("[Company Name]", width),
-                Center("[Company Address]", width),
-                Center("[Company Contact #]", width),
+                Center(CompanyName, width),
+                Center(CompanyAddress, width),
+                Center(CompanyContact, width),
                 Divider('-', width),
                 /*Center("(High density)", width),*/
                 Divider('-', width),

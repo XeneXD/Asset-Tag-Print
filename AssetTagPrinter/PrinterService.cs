@@ -469,13 +469,26 @@ namespace AssetTagPrinter
                 document.PrintPage += (sender, e) =>
                 {
                     using (Font normal = new Font("Consolas", 9))
+                    using (Font companyName = new Font("Consolas", 9, FontStyle.Bold))
+                    using (Font smallInfo = new Font("Consolas", 7))
                     {
                         float y = 10;
-                        float lineHeight = normal.GetHeight(e.Graphics) + 2;
-                        foreach (string line in TagLayoutFormatter.BuildPosReceiptLines(asset))
+                        var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
+                        for (int i = 0; i < lines.Count; i++)
                         {
-                            e.Graphics.DrawString(line, normal, Brushes.Black, 10, y);
-                            y += lineHeight;
+                            string line = lines[i];
+                            Font lineFont = normal;
+                            if (i == 1)
+                            {
+                                lineFont = companyName;
+                            }
+                            else if (i == 2 || i == 3)
+                            {
+                                lineFont = smallInfo;
+                            }
+
+                            e.Graphics.DrawString(line, lineFont, Brushes.Black, 10, y);
+                            y += lineFont.GetHeight(e.Graphics) + 2;
                         }
 
                         e.HasMorePages = false;
