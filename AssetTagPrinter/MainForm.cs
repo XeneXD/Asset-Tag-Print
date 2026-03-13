@@ -294,9 +294,13 @@ namespace AssetTagPrinter
 
                 _printerService ??= new PrinterService();
                 _printerService.Open();
-                foreach (var asset in assetsToPrint)
+                for (int i = 0; i < assetsToPrint.Count; i++)
                 {
+                    var asset = assetsToPrint[i];
                     _printerService.PrintAssetTag(asset);
+
+                    _printerService.CutBetweenTags();
+
                     Thread.Sleep(200);
                 }
             }

@@ -38,26 +38,24 @@ namespace AssetTagPrinter
 
         public static IReadOnlyList<string> BuildPosReceiptLines(Asset asset)
         {
-            string barcode = Truncate(asset.Barcode, ReceiptWidth - 2);
             string refText = Truncate($"ID: {asset.Ref}", ReceiptWidth - 2);
             string label = Truncate(asset.Label, ReceiptWidth - 2);
 
             var lines = new List<string>
             {
                 Divider('=', ReceiptWidth),
-                Center("[Company Name", ReceiptWidth),
+                Center("[Company Name]", ReceiptWidth),
                 Center("[Company Address]", ReceiptWidth),
                 Center("[Company Contact #]", ReceiptWidth),
                 Divider('-', ReceiptWidth),
-                Pad(barcode, ReceiptWidth),
                 /*Center("(High density)", ReceiptWidth),*/
                 Divider('-', ReceiptWidth),
-                Pad(refText, ReceiptWidth)
+                Center(refText, ReceiptWidth)
             };
 
             if (!string.IsNullOrWhiteSpace(label))
             {
-                lines.Add(Pad(label, ReceiptWidth));
+                lines.Add(Center(label, ReceiptWidth));
             }
 
             lines.Add(Divider('=', ReceiptWidth));

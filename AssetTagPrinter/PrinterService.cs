@@ -10,6 +10,9 @@ namespace AssetTagPrinter
 {
     public class PrinterService
     {
+        private const int FeedLinesBeforeBetweenTagCut = 4;
+        private const int BetweenTagCutPercentage = 25;
+
         private PosPrinter? _printer;
         private PosExplorer? _posExplorer;
         private string? _windowsPrinterName;
@@ -360,7 +363,7 @@ namespace AssetTagPrinter
             string barcodeValue = (asset.Barcode ?? string.Empty).Trim();
             var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset);
 
-            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(5)) + nl);
+            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(4)) + nl);
 
             // Print actual barcode
             if (!string.IsNullOrWhiteSpace(barcodeValue))
@@ -391,9 +394,33 @@ namespace AssetTagPrinter
                 _printer.PrintNormal(PrinterStation.Receipt, $"(No barcode){nl}");
             }
 
-            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Skip(5)) + nl + nl);
+            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Skip(4)) + nl + nl);
 
             Console.WriteLine($"Printed asset tag for: {asset.Label}");
+        }
+
+        public void CutBetweenTags()
+        {
+            if (_useWindowsPrinter || _printer == null)
+            {
+                return;
+            }
+
+            try
+            {
+                // Most thermal printers cut at a fixed position below the print head.
+                // Feed extra blank lines so the cut lands below the current label.
+                for (int i = 0; i < FeedLinesBeforeBetweenTagCut; i++)
+                {
+                    _printer.PrintNormal(PrinterStation.Receipt, "\r\n");
+                }
+
+                _printer.CutPaper(BetweenTagCutPercentage);
+            }
+            catch
+            {
+                // Ignore cut errors so printing can continue.
+            }
         }
 
         private void PrintAssetTagWithWindowsPrinter(Asset asset)
