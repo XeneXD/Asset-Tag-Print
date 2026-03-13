@@ -17,10 +17,12 @@ namespace AssetTagPrinter
             var lines = new List<string>
             {
                 BoxTop(PreviewInnerWidth),
-                BoxLine("[Your Logo - tiny]", PreviewInnerWidth),
+                BoxLine("[Company Name]", PreviewInnerWidth),
+                BoxLine("[Company Address]", PreviewInnerWidth),
+                BoxLine("[Company Contact #]", PreviewInnerWidth),
                 BoxDivider(PreviewInnerWidth),
                 BoxLine(barcode, PreviewInnerWidth),
-                BoxLine("(High density)", PreviewInnerWidth),
+                /*BoxLine("(High density)", PreviewInnerWidth),*/
                 BoxDivider(PreviewInnerWidth),
                 BoxLine(refText, PreviewInnerWidth)
             };
@@ -43,10 +45,12 @@ namespace AssetTagPrinter
             var lines = new List<string>
             {
                 Divider('=', ReceiptWidth),
-                Center("[Your Logo - tiny]", ReceiptWidth),
+                Center("[Company Name", ReceiptWidth),
+                Center("[Company Address]", ReceiptWidth),
+                Center("[Company Contact #]", ReceiptWidth),
                 Divider('-', ReceiptWidth),
                 Pad(barcode, ReceiptWidth),
-                Center("(High density)", ReceiptWidth),
+                /*Center("(High density)", ReceiptWidth),*/
                 Divider('-', ReceiptWidth),
                 Pad(refText, ReceiptWidth)
             };
