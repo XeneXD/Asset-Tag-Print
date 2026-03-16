@@ -141,7 +141,9 @@ namespace AssetTagPrinter
         {
             foreach (var line in WrapText(g, text, font, width))
             {
-                g.DrawString(line, font, Brushes.Black, left, y);
+                float lineWidth = g.MeasureString(line, font).Width;
+                float x = left + ((width - lineWidth) / 2f);
+                g.DrawString(line, font, Brushes.Black, x, y);
                 y += font.GetHeight(g) + extraSpacing;
             }
 
