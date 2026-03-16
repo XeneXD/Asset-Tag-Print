@@ -48,17 +48,18 @@ namespace AssetTagPrinter
                     using Font bodyFont = _styleSettings.Body.CreateFont();
 
                     float yPos = _styleSettings.TopMargin;
-                    float contentWidth = Math.Max(120f, previewBitmap.Width - (_styleSettings.LeftMargin * 2));
+                    float contentWidth = Math.Max(180f, previewBitmap.Width - 20f);
+                    float contentLeft = (previewBitmap.Width - contentWidth) / 2f;
 
                     if (lines.Count > 0)
                     {
-                        g.DrawString(lines[0], bodyFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        g.DrawString(lines[0], bodyFont, blackBrush, contentLeft, yPos);
                         yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos = DrawWrappedCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawWrappedCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, contentLeft, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawWrappedCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, contentLeft, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawWrappedCenteredBlock(g, "(032) 254-0302", secondaryFont, contentLeft, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
 
                     yPos += 4;
 
@@ -67,13 +68,13 @@ namespace AssetTagPrinter
                     {
                         if (barcode != null)
                         {
-                            float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
+                            float barcodeX = contentLeft + ((contentWidth - barcode.Width) / 2f);
                             g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
                             yPos += barcode.Height + _styleSettings.ExtraLineSpacing + 4;
                         }
                         else
                         {
-                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, contentLeft, yPos);
                             yPos += secondaryFont.GetHeight(g) + _styleSettings.ExtraLineSpacing + 4;
                         }
                     }

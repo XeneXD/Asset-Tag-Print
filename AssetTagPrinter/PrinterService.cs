@@ -642,6 +642,10 @@ namespace AssetTagPrinter
                     throw new Exception($"Windows printer is not available: {_windowsPrinterName}");
                 }
 
+                // Thermal drivers often report tiny margin bounds; use full page and handle our own centering.
+                document.OriginAtMargins = false;
+                document.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+
                 document.PrintController = new StandardPrintController();
                 document.PrintPage += (sender, e) =>
                 {
@@ -653,33 +657,35 @@ namespace AssetTagPrinter
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        float contentWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
+                        float pageWidth = Math.Max(200f, e.PageBounds.Width);
+                        float contentWidth = Math.Max(180f, pageWidth - 20f);
+                        float contentLeft = (pageWidth - contentWidth) / 2f;
 
                         if (lines.Count > 0)
                         {
-                            e.Graphics.DrawString(lines[0], body, Brushes.Black, settings.LeftMargin, y);
+                            e.Graphics.DrawString(lines[0], body, Brushes.Black, contentLeft, y);
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
 
                         y += 4;
-                        float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
+                        float availableWidth = contentWidth;
                         int barcodeWidth = (int)Math.Min(260f, Math.Max(180f, availableWidth - 40f));
                         using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 70))
                         {
                             if (barcode != null)
                             {
                                 // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
-                                float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
+                                float x = contentLeft + ((contentWidth - barcode.Width) / 2f);
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
                                 y += barcode.Height + settings.ExtraLineSpacing + 4;
                             }
                             else
                             {
-                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, settings.LeftMargin, y);
+                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, contentLeft, y);
                                 y += secondary.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
                             }
                         }
