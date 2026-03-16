@@ -368,7 +368,7 @@ namespace AssetTagPrinter
             }
 
             string nl = "\r\n";
-            string barcodeValue = (asset.Barcode ?? string.Empty).Trim();
+            string barcodeValue = asset.Barcode ?? string.Empty;
             int receiptWidth = GetReceiptTextWidth();
             var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset, receiptWidth);
 
@@ -404,7 +404,14 @@ namespace AssetTagPrinter
                 {
                     if (_printer.CapRecBarCode)
                     {
-                        _printer.PrintBarCode(PrinterStation.Receipt, barcodeValue, BarCodeSymbology.Code128, 80, 2, PosPrinter.PrinterBarCodeCenter, BarCodeTextPosition.Below);
+                        _printer.PrintBarCode(
+                            PrinterStation.Receipt,
+                            barcodeValue,
+                            BarCodeSymbology.Code128,
+                            120,
+                            3,
+                            PosPrinter.PrinterBarCodeCenter,
+                            BarCodeTextPosition.Below);
                     }
                     else
                     {
@@ -609,13 +616,42 @@ namespace AssetTagPrinter
                 document.PrintPage += (sender, e) =>
                 {
                     var settings = StyleSettings?.Clone() ?? PrintStyleSettings.CreateDefault();
+                    string barcodeValue = asset.Barcode ?? string.Empty;
                     using (Font header = settings.Header.CreateFont())
                     using (Font secondary = settings.Secondary.CreateFont())
                     using (Font body = settings.Body.CreateFont())
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        for (int i = 0; i < lines.Count; i++)
+                        int topSectionCount = Math.Min(4, lines.Count);
+                        for (int i = 0; i < topSectionCount; i++)
+                        {
+                            string line = lines[i];
+                            Font lineFont = GetLineFont(i, header, secondary, body);
+
+                            e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
+                            y += lineFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
+                        }
+
+                        y += 4;
+                        int barcodeWidth = (int)Math.Max(240f, e.MarginBounds.Width - (settings.LeftMargin * 2));
+                        using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 90))
+                        {
+                            if (barcode != null)
+                            {
+                                // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
+                                float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
+                                e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
+                                y += barcode.Height + settings.ExtraLineSpacing + 4;
+                            }
+                            else
+                            {
+                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, settings.LeftMargin, y);
+                                y += secondary.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
+                            }
+                        }
+
+                        for (int i = topSectionCount; i < lines.Count; i++)
                         {
                             string line = lines[i];
                             Font lineFont = GetLineFont(i, header, secondary, body);

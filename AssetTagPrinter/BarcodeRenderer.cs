@@ -9,7 +9,7 @@ namespace AssetTagPrinter
     {
         public static Bitmap? CreateCode128Bitmap(string? value, int width, int height)
         {
-            string data = (value ?? string.Empty).Trim();
+            string data = value ?? string.Empty;
             if (string.IsNullOrWhiteSpace(data))
             {
                 return null;
