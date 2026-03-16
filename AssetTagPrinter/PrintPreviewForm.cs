@@ -49,16 +49,38 @@ namespace AssetTagPrinter
 
                     float yPos = _styleSettings.TopMargin;
 
-                    for (int i = 0; i < lines.Count; i++)
+                    int topSectionCount = Math.Min(4, lines.Count);
+                    for (int i = 0; i < topSectionCount; i++)
                     {
                         Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
                         g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
                         yPos += lineFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos += 8;
-                    g.DrawRectangle(Pens.Black, 20, yPos, 240, 60);
-                    g.DrawString("Barcode generated at print time", secondaryFont, blackBrush, 42, yPos + 22);
+                    yPos += 4;
+
+                    int barcodeWidth = Math.Max(120, previewBitmap.Width - 80);
+                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
+                    {
+                        if (barcode != null)
+                        {
+                            float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
+                            g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
+                            yPos += barcode.Height + _styleSettings.ExtraLineSpacing + 4;
+                        }
+                        else
+                        {
+                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                            yPos += secondaryFont.GetHeight(g) + _styleSettings.ExtraLineSpacing + 4;
+                        }
+                    }
+
+                    for (int i = topSectionCount; i < lines.Count; i++)
+                    {
+                        Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
+                        g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        yPos += lineFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
+                    }
 
                     // Draw cut line (dashed)
                     Pen dashedPen = new Pen(Color.Red) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };

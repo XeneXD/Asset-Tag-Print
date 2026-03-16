@@ -566,7 +566,34 @@ namespace AssetTagPrinter
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        for (int i = 0; i < lines.Count; i++)
+                        int topSectionCount = Math.Min(4, lines.Count);
+                        for (int i = 0; i < topSectionCount; i++)
+                        {
+                            string line = lines[i];
+                            Font lineFont = GetLineFont(i, header, secondary, body);
+
+                            e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
+                            y += lineFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
+                        }
+
+                        y += 4;
+                        float printableWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
+                        using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, (int)printableWidth, 75))
+                        {
+                            if (barcode != null)
+                            {
+                                float x = settings.LeftMargin + ((printableWidth - barcode.Width) / 2f);
+                                e.Graphics.DrawImage(barcode, x, y, barcode.Width, barcode.Height);
+                                y += barcode.Height + settings.ExtraLineSpacing + 4;
+                            }
+                            else
+                            {
+                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, settings.LeftMargin, y);
+                                y += secondary.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
+                            }
+                        }
+
+                        for (int i = topSectionCount; i < lines.Count; i++)
                         {
                             string line = lines[i];
                             Font lineFont = GetLineFont(i, header, secondary, body);
