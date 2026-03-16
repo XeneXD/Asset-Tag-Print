@@ -56,9 +56,9 @@ namespace AssetTagPrinter
                         yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos = DrawWrappedCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawCenteredLine(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, 6f, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawCenteredLine(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 6f, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawCenteredLine(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 6f, _styleSettings.ExtraLineSpacing);
 
                     yPos += 4;
 
@@ -196,6 +196,48 @@ namespace AssetTagPrinter
             }
 
             return result;
+        }
+
+        private static float GetBestFitSize(Graphics g, string text, Font baseFont, float maxWidth, float minSize)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return baseFont.Size;
+            }
+
+            float size = baseFont.Size;
+            while (size > minSize)
+            {
+                using (Font probe = new Font(baseFont.FontFamily, size, baseFont.Style))
+                {
+                    var measured = g.MeasureString(text, probe, int.MaxValue);
+                    if (measured.Width <= maxWidth)
+                    {
+                        break;
+                    }
+                }
+
+                size -= 0.5f;
+            }
+
+            return Math.Max(minSize, size);
+        }
+
+        private static float DrawCenteredLine(Graphics g, string text, Font font, float left, float width, float y, float minSize, float extraSpacing)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return y;
+
+            float fittedSize = GetBestFitSize(g, text, font, width, minSize);
+            using (Font fitted = new Font(font.FontFamily, fittedSize, font.Style))
+            {
+                float textWidth = g.MeasureString(text, fitted).Width;
+                float x = left + Math.Max(0f, (width - textWidth) / 2f);
+                g.DrawString(text, fitted, Brushes.Black, x, y);
+                y += fitted.GetHeight(g) + extraSpacing;
+            }
+
+            return y;
         }
 
         private void InitializeComponent()

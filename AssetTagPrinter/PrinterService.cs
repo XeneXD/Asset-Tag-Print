@@ -661,9 +661,9 @@ namespace AssetTagPrinter
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
 
                         y += 4;
                         float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
@@ -760,6 +760,23 @@ namespace AssetTagPrinter
             }
 
             return result;
+        }
+
+        private static float DrawCenteredLine(Graphics g, string text, Font font, float left, float width, float y, float minSize, float extraSpacing)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return y;
+
+            float fittedSize = GetBestFitSize(g, text, font, width, minSize);
+            using (Font fitted = new Font(font.FontFamily, fittedSize, font.Style))
+            {
+                float textWidth = g.MeasureString(text, fitted).Width;
+                float x = left + Math.Max(0f, (width - textWidth) / 2f);
+                g.DrawString(text, fitted, Brushes.Black, x, y);
+                y += fitted.GetHeight(g) + extraSpacing;
+            }
+
+            return y;
         }
 
         private static Font GetLineFont(int lineIndex, Font headerFont, Font secondaryFont, Font bodyFont)
