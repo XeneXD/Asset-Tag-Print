@@ -642,10 +642,6 @@ namespace AssetTagPrinter
                     throw new Exception($"Windows printer is not available: {_windowsPrinterName}");
                 }
 
-                // Thermal drivers often report tiny margin bounds; use full page and handle our own centering.
-                document.OriginAtMargins = false;
-                document.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
-
                 document.PrintController = new StandardPrintController();
                 document.PrintPage += (sender, e) =>
                 {
@@ -657,35 +653,33 @@ namespace AssetTagPrinter
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        float pageWidth = Math.Max(200f, e.PageBounds.Width);
-                        float contentWidth = Math.Max(180f, pageWidth - 20f);
-                        float contentLeft = (pageWidth - contentWidth) / 2f;
+                        float contentWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
 
                         if (lines.Count > 0)
                         {
-                            e.Graphics.DrawString(lines[0], body, Brushes.Black, contentLeft, y);
+                            e.Graphics.DrawString(lines[0], body, Brushes.Black, settings.LeftMargin, y);
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, contentLeft, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
 
                         y += 4;
-                        float availableWidth = contentWidth;
+                        float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
                         int barcodeWidth = (int)Math.Min(260f, Math.Max(180f, availableWidth - 40f));
                         using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 70))
                         {
                             if (barcode != null)
                             {
                                 // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
-                                float x = contentLeft + ((contentWidth - barcode.Width) / 2f);
+                                float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
                                 y += barcode.Height + settings.ExtraLineSpacing + 4;
                             }
                             else
                             {
-                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, contentLeft, y);
+                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, settings.LeftMargin, y);
                                 y += secondary.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
                             }
                         }
@@ -709,12 +703,20 @@ namespace AssetTagPrinter
 
         private static float DrawWrappedCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing)
         {
+            using var sf = new StringFormat(StringFormat.GenericTypographic)
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Near,
+                Trimming = StringTrimming.None,
+                FormatFlags = StringFormatFlags.NoClip
+            };
+
             foreach (var line in WrapText(g, text, font, width))
             {
-                float lineWidth = g.MeasureString(line, font).Width;
-                float x = left + ((width - lineWidth) / 2f);
-                g.DrawString(line, font, Brushes.Black, x, y);
-                y += font.GetHeight(g) + extraSpacing;
+                float lineHeight = g.MeasureString(line, font, (int)width).Height;
+                var rect = new RectangleF(left, y, width, lineHeight);
+                g.DrawString(line, font, Brushes.Black, rect, sf);
+                y += lineHeight + extraSpacing;
             }
 
             return y;
