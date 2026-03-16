@@ -369,9 +369,30 @@ namespace AssetTagPrinter
             int receiptWidth = GetReceiptTextWidth();
             var receiptLines = TagLayoutFormatter.BuildPosReceiptLines(asset, receiptWidth);
 
-            _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(4)) + nl);
+            // Try to render the header/details/ID region as a bitmap so we can control fonts
+            try
+            {
+                int bitmapWidth = GetPreferredBitmapWidthPixels();
+                using (var bmp = RenderReceiptBitmap(asset, StyleSettings ?? PrintStyleSettings.CreateDefault(), bitmapWidth))
+                {
+                    try
+                    {
+                        _printer.PrintMemoryBitmap(PrinterStation.Receipt, bmp, bitmapWidth, PosPrinter.PrinterBitmapCenter);
+                    }
+                    catch (NotImplementedException)
+                    {
+                        // Fallback to printing as text if PrintMemoryBitmap isn't supported
+                        _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(4)) + nl);
+                    }
+                }
+            }
+            catch
+            {
+                // On any failure, fall back to normal text printing for the header region
+                try { _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Take(4)) + nl); } catch { }
+            }
 
-            // Print actual barcode
+            // Print actual barcode (use native barcode if available)
             if (!string.IsNullOrWhiteSpace(barcodeValue))
             {
                 try
@@ -400,6 +421,7 @@ namespace AssetTagPrinter
                 _printer.PrintNormal(PrinterStation.Receipt, $"(No barcode){nl}");
             }
 
+            // Print the remaining lines after the barcode as normal text
             _printer.PrintNormal(PrinterStation.Receipt, string.Join(nl, receiptLines.Skip(4)) + nl + nl);
 
             Console.WriteLine($"Printed asset tag for: {asset.Label}");
@@ -426,6 +448,73 @@ namespace AssetTagPrinter
             }
 
             return TagLayoutFormatter.ReceiptWidth;
+        }
+
+        private int GetPreferredBitmapWidthPixels()
+        {
+            try
+            {
+                if (_printer != null)
+                {
+                    int chars = _printer.RecLineChars;
+                    if (chars >= 48) return 576; // wide (80mm / high-density)
+                    if (chars >= 36) return 512; // medium
+                    if (chars > 0) return 384; // narrow (58mm)
+                }
+            }
+            catch
+            {
+            }
+
+            return 384;
+        }
+
+        private Bitmap RenderReceiptBitmap(Asset asset, PrintStyleSettings settings, int bitmapWidth)
+        {
+            var lines = TagLayoutFormatter.BuildPosReceiptLines(asset, GetReceiptTextWidth());
+
+            using (var measureBmp = new Bitmap(1, 1))
+            using (var g = Graphics.FromImage(measureBmp))
+            {
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                using (Font header = settings.Header.CreateFont())
+                using (Font secondary = settings.Secondary.CreateFont())
+                using (Font body = settings.Body.CreateFont())
+                {
+                    float totalHeight = 4f; // small top padding
+                    float[] lineHeights = new float[lines.Count];
+
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        Font f = GetLineFont(i, header, secondary, body);
+                        var size = g.MeasureString(lines[i], f, bitmapWidth);
+                        lineHeights[i] = size.Height;
+                        totalHeight += size.Height + settings.ExtraLineSpacing;
+                    }
+
+                    int bmpHeight = Math.Max(32, (int)Math.Ceiling(totalHeight) + 4);
+                    var bmp = new Bitmap(bitmapWidth, bmpHeight);
+                    using (var gfx = Graphics.FromImage(bmp))
+                    {
+                        gfx.Clear(Color.White);
+                        gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                        float y = 2f;
+                        for (int i = 0; i < lines.Count; i++)
+                        {
+                            string line = lines[i];
+                            Font fRef = GetLineFont(i, header, secondary, body);
+                            var sz = gfx.MeasureString(line, fRef, bitmapWidth);
+                            float x = (bitmapWidth - sz.Width) / 2f;
+                            gfx.DrawString(line, fRef, Brushes.Black, x, y);
+                            y += sz.Height + settings.ExtraLineSpacing;
+                        }
+                    }
+
+                    return bmp;
+                }
+            }
         }
 
         public void CutBetweenTags()
