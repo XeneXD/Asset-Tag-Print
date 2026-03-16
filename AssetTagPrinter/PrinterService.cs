@@ -18,6 +18,8 @@ namespace AssetTagPrinter
         private string? _windowsPrinterName;
         private bool _useWindowsPrinter;
 
+        public PrintStyleSettings StyleSettings { get; set; } = PrintStyleSettings.CreateDefault();
+
         private static DeviceInfo? FindPreferredPrinterDevice(PosExplorer explorer)
         {
             try
@@ -468,27 +470,20 @@ namespace AssetTagPrinter
                 document.PrintController = new StandardPrintController();
                 document.PrintPage += (sender, e) =>
                 {
-                    using (Font normal = new Font("Consolas", 9))
-                    using (Font companyName = new Font("Consolas", 9, FontStyle.Bold))
-                    using (Font smallInfo = new Font("Consolas", 7))
+                    var settings = StyleSettings?.Clone() ?? PrintStyleSettings.CreateDefault();
+                    using (Font header = settings.Header.CreateFont())
+                    using (Font secondary = settings.Secondary.CreateFont())
+                    using (Font body = settings.Body.CreateFont())
                     {
-                        float y = 10;
+                        float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
                         for (int i = 0; i < lines.Count; i++)
                         {
                             string line = lines[i];
-                            Font lineFont = normal;
-                            if (i == 1)
-                            {
-                                lineFont = companyName;
-                            }
-                            else if (i == 2 || i == 3)
-                            {
-                                lineFont = smallInfo;
-                            }
+                            Font lineFont = GetLineFont(i, header, secondary, body);
 
-                            e.Graphics.DrawString(line, lineFont, Brushes.Black, 10, y);
-                            y += lineFont.GetHeight(e.Graphics) + 2;
+                            e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
+                            y += lineFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
                         e.HasMorePages = false;
@@ -497,6 +492,21 @@ namespace AssetTagPrinter
 
                 document.Print();
             }
+        }
+
+        private static Font GetLineFont(int lineIndex, Font headerFont, Font secondaryFont, Font bodyFont)
+        {
+            if (lineIndex == 1)
+            {
+                return headerFont;
+            }
+
+            if (lineIndex == 2 || lineIndex == 3)
+            {
+                return secondaryFont;
+            }
+
+            return bodyFont;
         }
 
         public void Close()

@@ -15,6 +15,7 @@ namespace AssetTagPrinter
         private CsvService _csvService;
         private bool _isPrinting;
         private List<Asset> _loadedAssets = new List<Asset>();
+        private PrintStyleSettings _printStyleSettings = PrintStyleSettings.CreateDefault();
 
         public MainForm()
         {
@@ -297,6 +298,7 @@ namespace AssetTagPrinter
                 }
 
                 _printerService ??= new PrinterService();
+                _printerService.StyleSettings = _printStyleSettings.Clone();
                 _printerService.Open();
                 for (int i = 0; i < assetsToPrint.Count; i++)
                 {
@@ -342,12 +344,28 @@ namespace AssetTagPrinter
                 }
 
                 // Show print preview form
-                PrintPreviewForm previewForm = new PrintPreviewForm(selectedAssets);
+                PrintPreviewForm previewForm = new PrintPreviewForm(selectedAssets, _printStyleSettings);
                 previewForm.ShowDialog();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error generating preview: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnPrintStyle_Click(object sender, EventArgs e)
+        {
+            using (var styleEditor = new PrintStyleEditorForm(_printStyleSettings))
+            {
+                if (styleEditor.ShowDialog(this) == DialogResult.OK)
+                {
+                    _printStyleSettings = styleEditor.ResultSettings.Clone();
+                    MessageBox.Show(
+                        "Print style updated. Open Print Preview to verify before printing.",
+                        "Print Style",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
             }
         }
 

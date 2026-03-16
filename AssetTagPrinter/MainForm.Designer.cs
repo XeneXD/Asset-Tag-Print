@@ -17,6 +17,7 @@ namespace AssetTagPrinter
         private System.Windows.Forms.NumericUpDown nudLoadLimit;
         private System.Windows.Forms.Label lblWarehouse;
         private System.Windows.Forms.ComboBox cmbWarehouse;
+        private System.Windows.Forms.Button btnPrintStyle;
 
         protected override void Dispose(bool disposing)
         {
@@ -43,6 +44,7 @@ namespace AssetTagPrinter
             this.nudLoadLimit = new System.Windows.Forms.NumericUpDown();
             this.lblWarehouse = new System.Windows.Forms.Label();
             this.cmbWarehouse = new System.Windows.Forms.ComboBox();
+            this.btnPrintStyle = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewAssets)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudLoadLimit)).BeginInit();
             this.pnlTagPreview.SuspendLayout();
@@ -86,20 +88,30 @@ namespace AssetTagPrinter
             this.btnHelp.UseVisualStyleBackColor = true;
             this.btnHelp.Click += new System.EventHandler(this.btnHelp_Click);
             // 
+            // btnPrintStyle
+            // 
+            this.btnPrintStyle.Location = new System.Drawing.Point(320, 12);
+            this.btnPrintStyle.Name = "btnPrintStyle";
+            this.btnPrintStyle.Size = new System.Drawing.Size(110, 29);
+            this.btnPrintStyle.TabIndex = 3;
+            this.btnPrintStyle.Text = "Print Style";
+            this.btnPrintStyle.UseVisualStyleBackColor = true;
+            this.btnPrintStyle.Click += new System.EventHandler(this.btnPrintStyle_Click);
+            // 
             // chkLimitLoad
             // 
             this.chkLimitLoad.AutoSize = true;
-            this.chkLimitLoad.Location = new System.Drawing.Point(325, 16);
+            this.chkLimitLoad.Location = new System.Drawing.Point(436, 16);
             this.chkLimitLoad.Name = "chkLimitLoad";
             this.chkLimitLoad.Size = new System.Drawing.Size(79, 17);
-            this.chkLimitLoad.TabIndex = 3;
+            this.chkLimitLoad.TabIndex = 4;
             this.chkLimitLoad.Text = "Limit load:";
             this.chkLimitLoad.UseVisualStyleBackColor = true;
             // 
             // lblLoadLimit
             // 
             this.lblLoadLimit.AutoSize = true;
-            this.lblLoadLimit.Location = new System.Drawing.Point(475, 16);
+            this.lblLoadLimit.Location = new System.Drawing.Point(586, 16);
             this.lblLoadLimit.Name = "lblLoadLimit";
             this.lblLoadLimit.Size = new System.Drawing.Size(34, 13);
             this.lblLoadLimit.TabIndex = 10;
@@ -108,7 +120,7 @@ namespace AssetTagPrinter
             // 
             // nudLoadLimit
             // 
-            this.nudLoadLimit.Location = new System.Drawing.Point(410, 14);
+            this.nudLoadLimit.Location = new System.Drawing.Point(521, 14);
             this.nudLoadLimit.Maximum = new decimal(new int[] {
             100000,
             0,
@@ -121,7 +133,7 @@ namespace AssetTagPrinter
             0});
             this.nudLoadLimit.Name = "nudLoadLimit";
             this.nudLoadLimit.Size = new System.Drawing.Size(60, 20);
-            this.nudLoadLimit.TabIndex = 4;
+            this.nudLoadLimit.TabIndex = 5;
             this.nudLoadLimit.Value = new decimal(new int[] {
             100,
             0,
@@ -131,7 +143,7 @@ namespace AssetTagPrinter
             // lblPrinterStatus
             // 
             this.lblPrinterStatus.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblPrinterStatus.Location = new System.Drawing.Point(518, 16);
+            this.lblPrinterStatus.Location = new System.Drawing.Point(518, 45);
             this.lblPrinterStatus.Name = "lblPrinterStatus";
             this.lblPrinterStatus.Size = new System.Drawing.Size(270, 20);
             this.lblPrinterStatus.TabIndex = 5;
@@ -156,7 +168,7 @@ namespace AssetTagPrinter
             this.cmbWarehouse.Location = new System.Drawing.Point(83, 49);
             this.cmbWarehouse.Name = "cmbWarehouse";
             this.cmbWarehouse.Size = new System.Drawing.Size(429, 21);
-            this.cmbWarehouse.TabIndex = 5;
+            this.cmbWarehouse.TabIndex = 6;
             this.cmbWarehouse.SelectedIndexChanged += new System.EventHandler(this.cmbWarehouse_SelectedIndexChanged);
             // 
             // pnlTagPreview
@@ -210,6 +222,7 @@ namespace AssetTagPrinter
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.cmbWarehouse);
             this.Controls.Add(this.lblWarehouse);
+            this.Controls.Add(this.btnPrintStyle);
             this.Controls.Add(this.lblLoadLimit);
             this.Controls.Add(this.nudLoadLimit);
             this.Controls.Add(this.chkLimitLoad);

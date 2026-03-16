@@ -7,13 +7,15 @@ namespace AssetTagPrinter
 {
     public partial class PrintPreviewForm : Form
     {
-        private List<Asset> _assets;
+        private readonly List<Asset> _assets;
+        private readonly PrintStyleSettings _styleSettings;
         private int _currentIndex = 0;
 
-        public PrintPreviewForm(List<Asset> assets)
+        public PrintPreviewForm(List<Asset> assets, PrintStyleSettings? styleSettings = null)
         {
             InitializeComponent();
             _assets = assets;
+            _styleSettings = (styleSettings ?? PrintStyleSettings.CreateDefault()).Clone();
             ShowCurrentAsset();
         }
 
@@ -39,21 +41,24 @@ namespace AssetTagPrinter
                     g.Clear(Color.White);
                     g.DrawRectangle(Pens.Black, 0, 0, 279, 399);
 
-                    using Font monoFont = new Font("Consolas", 8);
                     Brush blackBrush = Brushes.Black;
                     var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
+                    using Font headerFont = _styleSettings.Header.CreateFont();
+                    using Font secondaryFont = _styleSettings.Secondary.CreateFont();
+                    using Font bodyFont = _styleSettings.Body.CreateFont();
 
-                    int yPos = 10;
+                    float yPos = _styleSettings.TopMargin;
 
-                    foreach (var line in lines)
+                    for (int i = 0; i < lines.Count; i++)
                     {
-                        g.DrawString(line, monoFont, blackBrush, 10, yPos);
-                        yPos += 14;
+                        Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
+                        g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        yPos += lineFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos += 10;
+                    yPos += 8;
                     g.DrawRectangle(Pens.Black, 20, yPos, 240, 60);
-                    g.DrawString("Barcode generated at print time", monoFont, blackBrush, 42, yPos + 24);
+                    g.DrawString("Barcode generated at print time", secondaryFont, blackBrush, 42, yPos + 22);
 
                     // Draw cut line (dashed)
                     Pen dashedPen = new Pen(Color.Red) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
@@ -90,6 +95,21 @@ namespace AssetTagPrinter
         private void btnClose_Click(object? sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private static Font GetLineFont(int lineIndex, Font headerFont, Font secondaryFont, Font bodyFont)
+        {
+            if (lineIndex == 1)
+            {
+                return headerFont;
+            }
+
+            if (lineIndex == 2 || lineIndex == 3)
+            {
+                return secondaryFont;
+            }
+
+            return bodyFont;
         }
 
         private void InitializeComponent()
