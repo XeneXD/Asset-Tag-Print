@@ -491,8 +491,6 @@ namespace AssetTagPrinter
 
         private Bitmap RenderReceiptBitmap(Asset asset, PrintStyleSettings settings, int bitmapWidth, string? barcodeValue)
         {
-            // Prepare text blocks
-
             using (var measureBmp = new Bitmap(1, 1))
             using (var g = Graphics.FromImage(measureBmp))
             {
@@ -518,7 +516,6 @@ namespace AssetTagPrinter
                 using (Font secondary = new Font(secondaryFamily, secondarySize, secondaryStyle))
                 using (Font body = new Font(bodyFamily, bodySize, bodyStyle))
                 {
-                    // Build logical text blocks for wrapping instead of relying on pre-padded lines
                     string headerText = "Yoshii Software Solution Philippines";
                     string addressText = "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City";
                     string contactText = "(032) 254-0302";
@@ -532,15 +529,19 @@ namespace AssetTagPrinter
                     blocks.Add(refText);
                     if (!string.IsNullOrWhiteSpace(labelText)) blocks.Add(labelText);
 
+                    float contentWidth = Math.Max(120f, bitmapWidth - 16f);
                     float totalHeight = 6f; // small top padding
-                    float[] blockHeights = new float[blocks.Count];
 
                     for (int i = 0; i < blocks.Count; i++)
                     {
-                        Font f = (i == 0) ? header : (i == 1 || i == 2 ? secondary : body);
-                        var size = g.MeasureString(blocks[i], f, bitmapWidth);
-                        blockHeights[i] = size.Height;
-                        totalHeight += size.Height + settings.ExtraLineSpacing;
+                        string block = blocks[i];
+                        Font baseFont = (i == 0) ? header : (i == 1 || i == 2 ? secondary : body);
+                        float fittedSize = GetBestFitSize(g, block, baseFont, contentWidth, 6f);
+                        using (Font fitted = new Font(baseFont.FontFamily, fittedSize, baseFont.Style))
+                        {
+                            var size = g.MeasureString(block, fitted, (int)contentWidth);
+                            totalHeight += size.Height + settings.ExtraLineSpacing;
+                        }
                     }
 
                     int bmpHeight = Math.Max(48, (int)Math.Ceiling(totalHeight) + 6);
@@ -560,17 +561,46 @@ namespace AssetTagPrinter
                         for (int i = 0; i < blocks.Count; i++)
                         {
                             string block = blocks[i];
-                            Font f = (i == 0) ? header : (i == 1 || i == 2 ? secondary : body);
-                            var measured = gfx.MeasureString(block, f, bitmapWidth);
-                            var rect = new RectangleF(0, y, bitmapWidth, measured.Height);
-                            gfx.DrawString(block, f, Brushes.Black, rect, sf);
-                            y += measured.Height + settings.ExtraLineSpacing;
+                            Font baseFont = (i == 0) ? header : (i == 1 || i == 2 ? secondary : body);
+                            float fittedSize = GetBestFitSize(gfx, block, baseFont, contentWidth, 6f);
+                            using (Font fitted = new Font(baseFont.FontFamily, fittedSize, baseFont.Style))
+                            {
+                                var measured = gfx.MeasureString(block, fitted, (int)contentWidth);
+                                var rect = new RectangleF(8f, y, contentWidth, measured.Height);
+                                gfx.DrawString(block, fitted, Brushes.Black, rect, sf);
+                                y += measured.Height + settings.ExtraLineSpacing;
+                            }
                         }
                     }
 
                     return bmp;
                 }
             }
+        }
+
+        private static float GetBestFitSize(Graphics g, string text, Font baseFont, float maxWidth, float minSize)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return baseFont.Size;
+            }
+
+            float size = baseFont.Size;
+            while (size > minSize)
+            {
+                using (Font probe = new Font(baseFont.FontFamily, size, baseFont.Style))
+                {
+                    var measured = g.MeasureString(text, probe, int.MaxValue);
+                    if (measured.Width <= maxWidth)
+                    {
+                        break;
+                    }
+                }
+
+                size -= 0.5f;
+            }
+
+            return Math.Max(minSize, size);
         }
 
         public void CutBetweenTags()
