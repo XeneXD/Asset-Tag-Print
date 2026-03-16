@@ -661,8 +661,8 @@ namespace AssetTagPrinter
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawCenteredLine(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
-                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, 9f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 8f, settings.ExtraLineSpacing);
                         y = DrawCenteredLine(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
 
                         y += 4;
@@ -675,7 +675,12 @@ namespace AssetTagPrinter
                                 // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
                                 float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
-                                y += barcode.Height + settings.ExtraLineSpacing + 4;
+                                y += barcode.Height + 2;
+                                // Draw barcode value text below the barcode
+                                float textWidth = e.Graphics.MeasureString(barcodeValue, body).Width;
+                                float textX = settings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                                e.Graphics.DrawString(barcodeValue, body, Brushes.Black, textX, y);
+                                y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
                             }
                             else
                             {
