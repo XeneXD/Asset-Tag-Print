@@ -408,8 +408,8 @@ namespace AssetTagPrinter
                             PrinterStation.Receipt,
                             barcodeValue,
                             BarCodeSymbology.Code128,
-                            120,
-                            3,
+                            90,
+                            2,
                             PosPrinter.PrinterBarCodeCenter,
                             BarCodeTextPosition.Below);
                     }
@@ -634,8 +634,9 @@ namespace AssetTagPrinter
                         }
 
                         y += 4;
-                        int barcodeWidth = (int)Math.Max(240f, e.MarginBounds.Width - (settings.LeftMargin * 2));
-                        using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 90))
+                        float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
+                        int barcodeWidth = (int)Math.Min(260f, Math.Max(180f, availableWidth - 40f));
+                        using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 70))
                         {
                             if (barcode != null)
                             {

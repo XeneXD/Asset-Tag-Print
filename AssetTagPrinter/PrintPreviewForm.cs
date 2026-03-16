@@ -59,8 +59,8 @@ namespace AssetTagPrinter
 
                     yPos += 4;
 
-                    int barcodeWidth = Math.Max(120, previewBitmap.Width - 80);
-                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
+                    int barcodeWidth = Math.Max(160, previewBitmap.Width - 110);
+                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 55))
                     {
                         if (barcode != null)
                         {
