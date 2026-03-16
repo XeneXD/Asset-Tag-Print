@@ -57,8 +57,8 @@ namespace AssetTagPrinter
                     }
 
                     yPos = DrawCenteredLine(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, 9f, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawCenteredLine(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 8f, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawCenteredLine(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 6f, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawCenteredLine(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 7f, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawCenteredLine(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 7f, _styleSettings.ExtraLineSpacing);
 
                     yPos += 4;
 
@@ -70,11 +70,11 @@ namespace AssetTagPrinter
                             float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
                             g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
                             yPos += barcode.Height + 2;
-                            // Draw barcode value text below the barcode
+                            // Draw barcode value text below the barcode, centered
                             float textWidth = g.MeasureString(asset.Barcode, bodyFont).Width;
                             float textX = _styleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
                             g.DrawString(asset.Barcode, bodyFont, blackBrush, textX, yPos);
-                            yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing + 4;
+                            yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                         }
                         else
                         {

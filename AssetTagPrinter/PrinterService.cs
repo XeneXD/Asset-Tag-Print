@@ -662,8 +662,8 @@ namespace AssetTagPrinter
                         }
 
                         y = DrawCenteredLine(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, 9f, settings.ExtraLineSpacing);
-                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 8f, settings.ExtraLineSpacing);
-                        y = DrawCenteredLine(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, 6f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 7f, settings.ExtraLineSpacing);
+                        y = DrawCenteredLine(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, 7f, settings.ExtraLineSpacing);
 
                         y += 4;
                         float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
@@ -676,11 +676,11 @@ namespace AssetTagPrinter
                                 float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
                                 y += barcode.Height + 2;
-                                // Draw barcode value text below the barcode
+                                // Draw barcode value text below the barcode, centered
                                 float textWidth = e.Graphics.MeasureString(barcodeValue, body).Width;
-                                float textX = settings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                                float textX = settings.LeftMargin + Math.Max(0f, (availableWidth - textWidth) / 2f);
                                 e.Graphics.DrawString(barcodeValue, body, Brushes.Black, textX, y);
-                                y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
+                                y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                             }
                             else
                             {
