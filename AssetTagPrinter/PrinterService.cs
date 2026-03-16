@@ -308,6 +308,7 @@ namespace AssetTagPrinter
             try
             {
                 _posExplorer = new PosExplorer();
+                _windowsPrinterName = FindPreferredWindowsPrinterName();
                 DeviceInfo? printerDevice = FindPreferredPrinterDevice(_posExplorer);
 
                 if (printerDevice != null)
@@ -316,7 +317,6 @@ namespace AssetTagPrinter
                     return;
                 }
 
-                _windowsPrinterName = FindPreferredWindowsPrinterName();
                 if (!string.IsNullOrWhiteSpace(_windowsPrinterName))
                 {
                     _useWindowsPrinter = true;
@@ -333,7 +333,7 @@ namespace AssetTagPrinter
 
         public void Open()
         {
-            if (_useWindowsPrinter)
+            if (_useWindowsPrinter || ShouldUseWindowsStyledRendering())
             {
                 return;
             }
@@ -353,7 +353,7 @@ namespace AssetTagPrinter
 
         public void PrintAssetTag(Asset asset)
         {
-            if (_useWindowsPrinter)
+            if (_useWindowsPrinter || ShouldUseWindowsStyledRendering())
             {
                 PrintAssetTagWithWindowsPrinter(asset);
                 return;
@@ -430,7 +430,7 @@ namespace AssetTagPrinter
 
         public void CutBetweenTags()
         {
-            if (_useWindowsPrinter || _printer == null)
+            if (_useWindowsPrinter || ShouldUseWindowsStyledRendering() || _printer == null)
             {
                 return;
             }
@@ -511,7 +511,7 @@ namespace AssetTagPrinter
 
         public void Close()
         {
-            if (_useWindowsPrinter)
+            if (_useWindowsPrinter || ShouldUseWindowsStyledRendering())
             {
                 return;
             }
@@ -529,6 +529,49 @@ namespace AssetTagPrinter
                     // Ignore exceptions on close
                 }
             }
+        }
+
+        private bool ShouldUseWindowsStyledRendering()
+        {
+            if (string.IsNullOrWhiteSpace(_windowsPrinterName))
+            {
+                return false;
+            }
+
+            return !IsDefaultStyle(StyleSettings);
+        }
+
+        private static bool IsDefaultStyle(PrintStyleSettings? settings)
+        {
+            if (settings == null)
+            {
+                return true;
+            }
+
+            var defaults = PrintStyleSettings.CreateDefault();
+            return IsSameSection(settings.Header, defaults.Header)
+                && IsSameSection(settings.Secondary, defaults.Secondary)
+                && IsSameSection(settings.Body, defaults.Body)
+                && NearlyEqual(settings.LeftMargin, defaults.LeftMargin)
+                && NearlyEqual(settings.TopMargin, defaults.TopMargin)
+                && NearlyEqual(settings.ExtraLineSpacing, defaults.ExtraLineSpacing);
+        }
+
+        private static bool IsSameSection(TextSectionStyle? a, TextSectionStyle? b)
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            return string.Equals(a.FontFamily, b.FontFamily, StringComparison.OrdinalIgnoreCase)
+                && a.Style == b.Style
+                && NearlyEqual(a.Size, b.Size);
+        }
+
+        private static bool NearlyEqual(float a, float b)
+        {
+            return Math.Abs(a - b) < 0.01f;
         }
     }
 }
