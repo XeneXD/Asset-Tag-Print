@@ -62,8 +62,8 @@ namespace AssetTagPrinter
 
                     yPos += 4;
 
-                    int barcodeWidth = Math.Max(160, previewBitmap.Width - 110);
-                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 55))
+                    int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
+                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
                     {
                         if (barcode != null)
                         {
@@ -140,67 +140,6 @@ namespace AssetTagPrinter
             }
 
             return bodyFont;
-        }
-
-        private static float DrawWrappedCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing)
-        {
-            foreach (var line in WrapText(g, text, font, width))
-            {
-                float lineWidth = g.MeasureString(line, font).Width;
-                float x = left + Math.Max(0f, (width - lineWidth) / 2f);
-                g.DrawString(line, font, Brushes.Black, x, y);
-                y += font.GetHeight(g) + extraSpacing;
-            }
-
-            return y;
-        }
-
-        private static List<string> WrapText(Graphics g, string text, Font font, float maxWidth)
-        {
-            var result = new List<string>();
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                result.Add(string.Empty);
-                return result;
-            }
-
-            var words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            string current = string.Empty;
-
-            foreach (var word in words)
-            {
-                string candidate = string.IsNullOrEmpty(current) ? word : current + " " + word;
-                if (g.MeasureString(candidate, font).Width <= maxWidth)
-                {
-                    current = candidate;
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(current))
-                {
-                    result.Add(current);
-                }
-
-                current = word;
-                while (g.MeasureString(current, font).Width > maxWidth && current.Length > 1)
-                {
-                    int split = current.Length - 1;
-                    while (split > 1 && g.MeasureString(current.Substring(0, split), font).Width > maxWidth)
-                    {
-                        split--;
-                    }
-
-                    result.Add(current.Substring(0, split));
-                    current = current.Substring(split);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(current))
-            {
-                result.Add(current);
-            }
-
-            return result;
         }
 
         private static float GetBestFitSize(Graphics g, string text, Font baseFont, float maxWidth, float minSize)
