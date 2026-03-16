@@ -653,17 +653,18 @@ namespace AssetTagPrinter
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
+                        float startX = e.MarginBounds.Left + settings.LeftMargin;
                         float contentWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
 
                         if (lines.Count > 0)
                         {
-                            e.Graphics.DrawString(lines[0], body, Brushes.Black, settings.LeftMargin, y);
+                            e.Graphics.DrawString(lines[0], body, Brushes.Black, startX, y);
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
-                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, startX, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, startX, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, startX, contentWidth, y, settings.ExtraLineSpacing);
 
                         y += 4;
                         float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
@@ -673,13 +674,13 @@ namespace AssetTagPrinter
                             if (barcode != null)
                             {
                                 // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
-                                float x = settings.LeftMargin + ((barcodeWidth - barcode.Width) / 2f);
+                                float x = startX + ((barcodeWidth - barcode.Width) / 2f);
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
                                 y += barcode.Height + settings.ExtraLineSpacing + 4;
                             }
                             else
                             {
-                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, settings.LeftMargin, y);
+                                e.Graphics.DrawString("(Barcode unavailable)", secondary, Brushes.Black, startX, y);
                                 y += secondary.GetHeight(e.Graphics) + settings.ExtraLineSpacing + 4;
                             }
                         }
@@ -689,7 +690,7 @@ namespace AssetTagPrinter
                             string line = lines[i];
                             Font lineFont = GetLineFont(i, header, secondary, body);
 
-                            e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
+                            e.Graphics.DrawString(line, lineFont, Brushes.Black, startX, y);
                             y += lineFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 

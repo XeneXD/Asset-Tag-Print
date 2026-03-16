@@ -48,17 +48,18 @@ namespace AssetTagPrinter
                     using Font bodyFont = _styleSettings.Body.CreateFont();
 
                     float yPos = _styleSettings.TopMargin;
-                    float contentWidth = Math.Max(120f, previewBitmap.Width - (_styleSettings.LeftMargin * 2));
+                    float contentWidth = Math.Max(180f, previewBitmap.Width - 24f);
+                    float startX = (previewBitmap.Width - contentWidth) / 2f;
 
                     if (lines.Count > 0)
                     {
-                        g.DrawString(lines[0], bodyFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        g.DrawString(lines[0], bodyFont, blackBrush, startX, yPos);
                         yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos = DrawWrappedCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawWrappedCenteredBlock(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawAdaptiveCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, startX, contentWidth, yPos, _styleSettings.ExtraLineSpacing, 7f);
+                    yPos = DrawAdaptiveCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, startX, contentWidth, yPos, _styleSettings.ExtraLineSpacing, 7f);
+                    yPos = DrawAdaptiveCenteredBlock(g, "(032) 254-0302", secondaryFont, startX, contentWidth, yPos, _styleSettings.ExtraLineSpacing, 7f);
 
                     yPos += 4;
 
@@ -73,7 +74,7 @@ namespace AssetTagPrinter
                         }
                         else
                         {
-                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, startX, yPos);
                             yPos += secondaryFont.GetHeight(g) + _styleSettings.ExtraLineSpacing + 4;
                         }
                     }
@@ -81,7 +82,7 @@ namespace AssetTagPrinter
                     for (int i = 4; i < lines.Count; i++)
                     {
                         Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
-                        g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        g.DrawString(lines[i], lineFont, blackBrush, startX, yPos);
                         yPos += lineFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
@@ -137,7 +138,7 @@ namespace AssetTagPrinter
             return bodyFont;
         }
 
-        private static float DrawWrappedCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing)
+        private static float DrawAdaptiveCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing, float minSize)
         {
             using var sf = new StringFormat(StringFormat.GenericTypographic)
             {
@@ -147,15 +148,41 @@ namespace AssetTagPrinter
                 FormatFlags = StringFormatFlags.NoClip
             };
 
-            foreach (var line in WrapText(g, text, font, width))
+            float fittedSize = GetBestFitSize(g, text, font, width, minSize);
+            using var fittedFont = new Font(font.FontFamily, fittedSize, font.Style);
+
+            foreach (var line in WrapText(g, text, fittedFont, width))
             {
-                float lineHeight = g.MeasureString(line, font, (int)width).Height;
+                float lineHeight = g.MeasureString(line, fittedFont, (int)width).Height;
                 var rect = new RectangleF(left, y, width, lineHeight);
-                g.DrawString(line, font, Brushes.Black, rect, sf);
+                g.DrawString(line, fittedFont, Brushes.Black, rect, sf);
                 y += lineHeight + extraSpacing;
             }
 
             return y;
+        }
+
+        private static float GetBestFitSize(Graphics g, string text, Font baseFont, float maxWidth, float minSize)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return baseFont.Size;
+            }
+
+            float size = baseFont.Size;
+            while (size > minSize)
+            {
+                using var probe = new Font(baseFont.FontFamily, size, baseFont.Style);
+                float measured = g.MeasureString(text, probe, int.MaxValue).Width;
+                if (measured <= maxWidth)
+                {
+                    break;
+                }
+
+                size -= 0.5f;
+            }
+
+            return Math.Max(minSize, size);
         }
 
         private static List<string> WrapText(Graphics g, string text, Font font, float maxWidth)
