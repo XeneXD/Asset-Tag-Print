@@ -48,14 +48,17 @@ namespace AssetTagPrinter
                     using Font bodyFont = _styleSettings.Body.CreateFont();
 
                     float yPos = _styleSettings.TopMargin;
+                    float contentWidth = Math.Max(120f, previewBitmap.Width - (_styleSettings.LeftMargin * 2));
 
-                    int topSectionCount = Math.Min(4, lines.Count);
-                    for (int i = 0; i < topSectionCount; i++)
+                    if (lines.Count > 0)
                     {
-                        Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
-                        g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
-                        yPos += lineFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
+                        g.DrawString(lines[0], bodyFont, blackBrush, _styleSettings.LeftMargin, yPos);
+                        yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
+
+                    yPos = DrawWrappedCenteredBlock(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawWrappedCenteredBlock(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
+                    yPos = DrawWrappedCenteredBlock(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, _styleSettings.ExtraLineSpacing);
 
                     yPos += 4;
 
@@ -75,7 +78,7 @@ namespace AssetTagPrinter
                         }
                     }
 
-                    for (int i = topSectionCount; i < lines.Count; i++)
+                    for (int i = 4; i < lines.Count; i++)
                     {
                         Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
                         g.DrawString(lines[i], lineFont, blackBrush, _styleSettings.LeftMargin, yPos);
@@ -132,6 +135,65 @@ namespace AssetTagPrinter
             }
 
             return bodyFont;
+        }
+
+        private static float DrawWrappedCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing)
+        {
+            foreach (var line in WrapText(g, text, font, width))
+            {
+                g.DrawString(line, font, Brushes.Black, left, y);
+                y += font.GetHeight(g) + extraSpacing;
+            }
+
+            return y;
+        }
+
+        private static List<string> WrapText(Graphics g, string text, Font font, float maxWidth)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                result.Add(string.Empty);
+                return result;
+            }
+
+            var words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string current = string.Empty;
+
+            foreach (var word in words)
+            {
+                string candidate = string.IsNullOrEmpty(current) ? word : current + " " + word;
+                if (g.MeasureString(candidate, font).Width <= maxWidth)
+                {
+                    current = candidate;
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(current))
+                {
+                    result.Add(current);
+                }
+
+                current = word;
+                while (g.MeasureString(current, font).Width > maxWidth && current.Length > 1)
+                {
+                    int split = current.Length - 1;
+                    while (split > 1 && g.MeasureString(current.Substring(0, split), font).Width > maxWidth)
+                    {
+                        split--;
+                    }
+
+                    result.Add(current.Substring(0, split));
+                    current = current.Substring(split);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(current))
+            {
+                result.Add(current);
+            }
+
+            return result;
         }
 
         private void InitializeComponent()

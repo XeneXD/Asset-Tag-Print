@@ -653,15 +653,17 @@ namespace AssetTagPrinter
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        int topSectionCount = Math.Min(4, lines.Count);
-                        for (int i = 0; i < topSectionCount; i++)
-                        {
-                            string line = lines[i];
-                            Font lineFont = GetLineFont(i, header, secondary, body);
+                        float contentWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
 
-                            e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
-                            y += lineFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
+                        if (lines.Count > 0)
+                        {
+                            e.Graphics.DrawString(lines[0], body, Brushes.Black, settings.LeftMargin, y);
+                            y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
+
+                        y = DrawWrappedCenteredBlock(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
+                        y = DrawWrappedCenteredBlock(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, settings.ExtraLineSpacing);
 
                         y += 4;
                         float availableWidth = e.MarginBounds.Width - (settings.LeftMargin * 2);
@@ -682,7 +684,7 @@ namespace AssetTagPrinter
                             }
                         }
 
-                        for (int i = topSectionCount; i < lines.Count; i++)
+                        for (int i = 4; i < lines.Count; i++)
                         {
                             string line = lines[i];
                             Font lineFont = GetLineFont(i, header, secondary, body);
@@ -697,6 +699,65 @@ namespace AssetTagPrinter
 
                 document.Print();
             }
+        }
+
+        private static float DrawWrappedCenteredBlock(Graphics g, string text, Font font, float left, float width, float y, float extraSpacing)
+        {
+            foreach (var line in WrapText(g, text, font, width))
+            {
+                g.DrawString(line, font, Brushes.Black, left, y);
+                y += font.GetHeight(g) + extraSpacing;
+            }
+
+            return y;
+        }
+
+        private static System.Collections.Generic.List<string> WrapText(Graphics g, string text, Font font, float maxWidth)
+        {
+            var result = new System.Collections.Generic.List<string>();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                result.Add(string.Empty);
+                return result;
+            }
+
+            var words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string current = string.Empty;
+
+            foreach (var word in words)
+            {
+                string candidate = string.IsNullOrEmpty(current) ? word : current + " " + word;
+                if (g.MeasureString(candidate, font).Width <= maxWidth)
+                {
+                    current = candidate;
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(current))
+                {
+                    result.Add(current);
+                }
+
+                current = word;
+                while (g.MeasureString(current, font).Width > maxWidth && current.Length > 1)
+                {
+                    int split = current.Length - 1;
+                    while (split > 1 && g.MeasureString(current.Substring(0, split), font).Width > maxWidth)
+                    {
+                        split--;
+                    }
+
+                    result.Add(current.Substring(0, split));
+                    current = current.Substring(split);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(current))
+            {
+                result.Add(current);
+            }
+
+            return result;
         }
 
         private static Font GetLineFont(int lineIndex, Font headerFont, Font secondaryFont, Font bodyFont)
