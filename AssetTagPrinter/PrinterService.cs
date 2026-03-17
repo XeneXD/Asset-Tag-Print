@@ -642,18 +642,43 @@ namespace AssetTagPrinter
                     throw new Exception($"Windows printer is not available: {_windowsPrinterName}");
                 }
 
+                // Apply orientation setting from style settings
+                var settings = StyleSettings?.Clone() ?? PrintStyleSettings.CreateDefault();
+                document.DefaultPageSettings.Landscape = (settings.Orientation == PrintOrientation.Landscape);
+
                 document.PrintController = new StandardPrintController();
                 document.PrintPage += (sender, e) =>
                 {
                     var settings = StyleSettings?.Clone() ?? PrintStyleSettings.CreateDefault();
                     string barcodeValue = asset.Barcode ?? string.Empty;
-                    using (Font header = settings.Header.CreateFont())
-                    using (Font secondary = settings.Secondary.CreateFont())
-                    using (Font body = settings.Body.CreateFont())
+                    
+                    // Adjust font sizes based on orientation and auto-scale setting
+                    Font header = settings.Header.CreateFont();
+                    Font secondary = settings.Secondary.CreateFont();
+                    Font body = settings.Body.CreateFont();
+                    
+                    if (settings.AutoScaleFonts)
+                    {
+                        float scale = settings.Orientation == PrintOrientation.Landscape ? 1.15f : 1.0f;
+                        header = new Font(settings.Header.FontFamily, settings.Header.Size * scale, settings.Header.Style);
+                        secondary = new Font(settings.Secondary.FontFamily, settings.Secondary.Size * scale, settings.Secondary.Style);
+                        body = new Font(settings.Body.FontFamily, settings.Body.Size * scale, settings.Body.Style);
+                    }
+                    
+                    using (header)
+                    using (secondary)
+                    using (body)
                     {
                         float y = settings.TopMargin;
                         var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
-                        float contentWidth = Math.Max(120f, e.MarginBounds.Width - (settings.LeftMargin * 2));
+                        
+                        // Get actual printable page width - this changes based on orientation
+                        float pageWidth = e.MarginBounds.Width;
+                        float pageHeight = e.MarginBounds.Height;
+                        float contentWidth = Math.Max(120f, pageWidth - (settings.LeftMargin + settings.RightMargin));
+                        
+                        // Log orientation info for debugging
+                        System.Diagnostics.Debug.WriteLine($"[Print] Orientation: {settings.Orientation}, IsLandscape: {e.PageSettings.Landscape}, PageWidth: {pageWidth}, ContentWidth: {contentWidth}");
 
                         if (lines.Count > 0)
                         {
