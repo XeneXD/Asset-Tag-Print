@@ -15,8 +15,10 @@ namespace AssetTagPrinter
         private System.Windows.Forms.CheckBox chkLimitLoad;
         private System.Windows.Forms.Label lblLoadLimit;
         private System.Windows.Forms.NumericUpDown nudLoadLimit;
-        private System.Windows.Forms.Label lblWarehouse;
-        private System.Windows.Forms.ComboBox cmbWarehouse;
+        private System.Windows.Forms.Label lblCategory;
+        private System.Windows.Forms.ComboBox cmbCategory;
+        private System.Windows.Forms.Label lblFilterValue;
+        private System.Windows.Forms.ComboBox cmbFilterValue;
         private System.Windows.Forms.Button btnPrintStyle;
 
         protected override void Dispose(bool disposing)
@@ -42,8 +44,10 @@ namespace AssetTagPrinter
             this.chkLimitLoad = new System.Windows.Forms.CheckBox();
             this.lblLoadLimit = new System.Windows.Forms.Label();
             this.nudLoadLimit = new System.Windows.Forms.NumericUpDown();
-            this.lblWarehouse = new System.Windows.Forms.Label();
-            this.cmbWarehouse = new System.Windows.Forms.ComboBox();
+            this.lblCategory = new System.Windows.Forms.Label();
+            this.cmbCategory = new System.Windows.Forms.ComboBox();
+            this.lblFilterValue = new System.Windows.Forms.Label();
+            this.cmbFilterValue = new System.Windows.Forms.ComboBox();
             this.btnPrintStyle = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewAssets)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudLoadLimit)).BeginInit();
@@ -53,9 +57,9 @@ namespace AssetTagPrinter
             // dataGridViewAssets
             // 
             this.dataGridViewAssets.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewAssets.Location = new System.Drawing.Point(12, 75);
+            this.dataGridViewAssets.Location = new System.Drawing.Point(12, 95);
             this.dataGridViewAssets.Name = "dataGridViewAssets";
-            this.dataGridViewAssets.Size = new System.Drawing.Size(500, 302);
+            this.dataGridViewAssets.Size = new System.Drawing.Size(500, 282);
             this.dataGridViewAssets.TabIndex = 6;
             // 
             // btnLoadCsv
@@ -151,34 +155,59 @@ namespace AssetTagPrinter
             this.lblPrinterStatus.Text = "Printer: Checking...";
             this.lblPrinterStatus.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // lblWarehouse
+            // lblCategory
             // 
-            this.lblWarehouse.AutoSize = true;
-            this.lblWarehouse.Location = new System.Drawing.Point(12, 52);
-            this.lblWarehouse.Name = "lblWarehouse";
-            this.lblWarehouse.Size = new System.Drawing.Size(65, 13);
-            this.lblWarehouse.TabIndex = 11;
-            this.lblWarehouse.TabStop = false;
-            this.lblWarehouse.Text = "Warehouse:";
+            this.lblCategory.AutoSize = true;
+            this.lblCategory.Location = new System.Drawing.Point(12, 52);
+            this.lblCategory.Name = "lblCategory";
+            this.lblCategory.Size = new System.Drawing.Size(52, 13);
+            this.lblCategory.TabIndex = 11;
+            this.lblCategory.TabStop = false;
+            this.lblCategory.Text = "Category:";
             // 
-            // cmbWarehouse
+            // cmbCategory
             // 
-            this.cmbWarehouse.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbWarehouse.FormattingEnabled = true;
-            this.cmbWarehouse.Location = new System.Drawing.Point(83, 49);
-            this.cmbWarehouse.Name = "cmbWarehouse";
-            this.cmbWarehouse.Size = new System.Drawing.Size(429, 21);
-            this.cmbWarehouse.TabIndex = 6;
-            this.cmbWarehouse.SelectedIndexChanged += new System.EventHandler(this.cmbWarehouse_SelectedIndexChanged);
+            this.cmbCategory.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbCategory.FormattingEnabled = true;
+            this.cmbCategory.Items.AddRange(new object[] {
+            "None",
+            "Warehouse"});
+            this.cmbCategory.Location = new System.Drawing.Point(70, 49);
+            this.cmbCategory.Name = "cmbCategory";
+            this.cmbCategory.Size = new System.Drawing.Size(442, 21);
+            this.cmbCategory.TabIndex = 6;
+            this.cmbCategory.SelectedIndexChanged += new System.EventHandler(this.cmbCategory_SelectedIndexChanged);
+            // 
+            // lblFilterValue
+            // 
+            this.lblFilterValue.AutoSize = true;
+            this.lblFilterValue.Location = new System.Drawing.Point(12, 70);
+            this.lblFilterValue.Name = "lblFilterValue";
+            this.lblFilterValue.Size = new System.Drawing.Size(52, 13);
+            this.lblFilterValue.TabIndex = 12;
+            this.lblFilterValue.TabStop = false;
+            this.lblFilterValue.Text = "Filter by:";
+            this.lblFilterValue.Visible = false;
+            // 
+            // cmbFilterValue
+            // 
+            this.cmbFilterValue.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbFilterValue.FormattingEnabled = true;
+            this.cmbFilterValue.Location = new System.Drawing.Point(70, 67);
+            this.cmbFilterValue.Name = "cmbFilterValue";
+            this.cmbFilterValue.Size = new System.Drawing.Size(442, 21);
+            this.cmbFilterValue.TabIndex = 7;
+            this.cmbFilterValue.Visible = false;
+            this.cmbFilterValue.SelectedIndexChanged += new System.EventHandler(this.cmbFilterValue_SelectedIndexChanged);
             // 
             // pnlTagPreview
             // 
             this.pnlTagPreview.BackColor = System.Drawing.Color.DarkGray;
             this.pnlTagPreview.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pnlTagPreview.Controls.Add(this.lblTagPreview);
-            this.pnlTagPreview.Location = new System.Drawing.Point(518, 75);
+            this.pnlTagPreview.Location = new System.Drawing.Point(518, 95);
             this.pnlTagPreview.Name = "pnlTagPreview";
-            this.pnlTagPreview.Size = new System.Drawing.Size(270, 302);
+            this.pnlTagPreview.Size = new System.Drawing.Size(270, 282);
             this.pnlTagPreview.TabIndex = 3;
             this.pnlTagPreview.TabStop = false;
             // 
@@ -220,8 +249,10 @@ namespace AssetTagPrinter
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.cmbWarehouse);
-            this.Controls.Add(this.lblWarehouse);
+            this.Controls.Add(this.cmbFilterValue);
+            this.Controls.Add(this.lblFilterValue);
+            this.Controls.Add(this.cmbCategory);
+            this.Controls.Add(this.lblCategory);
             this.Controls.Add(this.btnPrintStyle);
             this.Controls.Add(this.lblLoadLimit);
             this.Controls.Add(this.nudLoadLimit);

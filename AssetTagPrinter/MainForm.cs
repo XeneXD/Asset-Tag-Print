@@ -30,6 +30,7 @@ namespace AssetTagPrinter
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
             chkLimitLoad.CheckedChanged += FilterControlsChanged;
             nudLoadLimit.ValueChanged += FilterControlsChanged;
+            cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
         }
 
@@ -67,9 +68,9 @@ namespace AssetTagPrinter
 
             if (keyData == (Keys.Control | Keys.W))
             {
-                if (cmbWarehouse != null && cmbWarehouse.CanFocus)
+                if (cmbCategory != null && cmbCategory.CanFocus)
                 {
-                    cmbWarehouse.Focus();
+                    cmbCategory.Focus();
                 }
                 return true;
             }
@@ -97,20 +98,20 @@ namespace AssetTagPrinter
                     return true;
                 }
 
-                if (cmbWarehouse != null && (cmbWarehouse.Focused || cmbWarehouse.DroppedDown))
+                if (cmbCategory != null && (cmbCategory.Focused || cmbCategory.DroppedDown))
                 {
-                    if (cmbWarehouse.DroppedDown)
+                    if (cmbCategory.DroppedDown)
                     {
-                        cmbWarehouse.DroppedDown = false;
+                        cmbCategory.DroppedDown = false;
                     }
 
-                    ApplyWarehouseFilter();
+                    ApplyFilters();
                     return true;
                 }
 
                 if (nudLoadLimit != null && nudLoadLimit.Focused)
                 {
-                    ApplyWarehouseFilter();
+                    ApplyFilters();
                     return true;
                 }
             }
@@ -173,69 +174,77 @@ namespace AssetTagPrinter
         {
             var assets = _csvService.ReadAssets(csvPath).ToList();
             _loadedAssets = assets;
-            PopulateWarehouseFilter(_loadedAssets);
-            return ApplyWarehouseFilter();
+            return ApplyFilters();
         }
 
-        private void PopulateWarehouseFilter(List<Asset> assets)
+        private void PopulateFilterValueDropdown()
         {
-            if (cmbWarehouse == null)
+            string selectedCategory = cmbCategory.SelectedItem as string ?? "None";
+
+            if (selectedCategory == "None")
             {
+                cmbFilterValue.Visible = false;
+                lblFilterValue.Visible = false;
                 return;
             }
 
-            string current = cmbWarehouse.SelectedItem as string ?? "All";
-            bool hasBlankWarehouse = assets.Any(a => string.IsNullOrWhiteSpace(a.Warehouse));
-            var warehouses = assets
-                .Select(a => (a.Warehouse ?? string.Empty).Trim())
-                .Where(w => !string.IsNullOrWhiteSpace(w))
-                .Distinct(System.StringComparer.OrdinalIgnoreCase)
-                .OrderBy(w => w)
-                .ToList();
+            cmbFilterValue.Visible = true;
+            lblFilterValue.Visible = true;
 
-            cmbWarehouse.BeginUpdate();
+            string currentSelection = cmbFilterValue.SelectedItem as string ?? "All";
+            cmbFilterValue.BeginUpdate();
             try
             {
-                cmbWarehouse.Items.Clear();
-                cmbWarehouse.Items.Add("All");
-                if (hasBlankWarehouse)
+                cmbFilterValue.Items.Clear();
+
+                if (selectedCategory == "Warehouse")
                 {
-                    cmbWarehouse.Items.Add(BlankWarehouseOption);
+                    lblFilterValue.Text = "Warehouse:";
+                    bool hasBlankWarehouse = _loadedAssets.Any(a => string.IsNullOrWhiteSpace(a.Warehouse));
+                    var warehouses = _loadedAssets
+                        .Select(a => (a.Warehouse ?? string.Empty).Trim())
+                        .Where(w => !string.IsNullOrWhiteSpace(w))
+                        .Distinct(System.StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(w => w)
+                        .ToList();
+
+                    cmbFilterValue.Items.Add("All");
+                    if (hasBlankWarehouse)
+                    {
+                        cmbFilterValue.Items.Add(BlankWarehouseOption);
+                    }
+                    foreach (var w in warehouses)
+                    {
+                        cmbFilterValue.Items.Add(w);
+                    }
                 }
 
-                foreach (var w in warehouses)
-                {
-                    cmbWarehouse.Items.Add(w);
-                }
-
-                int idx = cmbWarehouse.Items.IndexOf(current);
-                cmbWarehouse.SelectedIndex = idx >= 0 ? idx : 0;
+                int idx = cmbFilterValue.Items.IndexOf(currentSelection);
+                cmbFilterValue.SelectedIndex = idx >= 0 ? idx : 0;
             }
             finally
             {
-                cmbWarehouse.EndUpdate();
+                cmbFilterValue.EndUpdate();
             }
         }
 
-        private int ApplyWarehouseFilter()
+        private int ApplyFilters()
         {
-            if (cmbWarehouse == null)
-            {
-                return 0;
-            }
-
             IEnumerable<Asset> view = _loadedAssets;
 
-            string selected = cmbWarehouse.SelectedItem as string ?? "All";
-            if (!string.Equals(selected, "All", StringComparison.OrdinalIgnoreCase))
+            // Apply category-based filter
+            string selectedCategory = cmbCategory.SelectedItem as string ?? "None";
+            string selectedFilter = cmbFilterValue.SelectedItem as string ?? "All";
+
+            if (selectedCategory == "Warehouse" && !string.Equals(selectedFilter, "All", StringComparison.OrdinalIgnoreCase))
             {
-                if (string.Equals(selected, BlankWarehouseOption, StringComparison.Ordinal))
+                if (string.Equals(selectedFilter, BlankWarehouseOption, StringComparison.Ordinal))
                 {
                     view = view.Where(a => string.IsNullOrWhiteSpace(a.Warehouse));
                 }
                 else
                 {
-                    view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selected, StringComparison.OrdinalIgnoreCase));
+                    view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selectedFilter, StringComparison.OrdinalIgnoreCase));
                 }
             }
 
@@ -262,6 +271,17 @@ namespace AssetTagPrinter
             return list.Count;
         }
 
+        private void cmbCategory_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            PopulateFilterValueDropdown();
+            ApplyFilters();
+        }
+
+        private void cmbFilterValue_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyFilters();
+        }
+
         private void FilterControlsChanged(object? sender, EventArgs e)
         {
             if (_loadedAssets.Count == 0)
@@ -269,7 +289,7 @@ namespace AssetTagPrinter
                 return;
             }
 
-            ApplyWarehouseFilter();
+            ApplyFilters();
         }
 
         private void UpdatePreviewPanel(Asset asset)
@@ -404,11 +424,6 @@ namespace AssetTagPrinter
             {
                 help.ShowDialog(this);
             }
-        }
-
-        private void cmbWarehouse_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            ApplyWarehouseFilter();
         }
     }
 }

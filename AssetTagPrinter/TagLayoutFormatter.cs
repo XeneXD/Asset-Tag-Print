@@ -56,9 +56,7 @@ namespace AssetTagPrinter
                 Center(CompanyName, width),
                 Center(CompanyAddress, width),
                 Center(CompanyContact, width),
-                Divider('-', width),
-                /*Center("(High density)", width),*/
-                Divider('-', width),
+                Divider('-', width) + Divider('-', width - 7),
                 Center(refText, width)
             };
 
