@@ -26,6 +26,11 @@ namespace AssetTagPrinter
         public float ExtraLineSpacing { get; set; } = 1f;
         
         /// <summary>
+        /// Maximum width for logo display as percentage (10-100%)
+        /// </summary>
+        public float LogoMaxWidthPercent { get; set; } = 80f;
+        
+        /// <summary>
         /// Page orientation - automatically adjusts layout proportions
         /// </summary>
         public PrintOrientation Orientation { get; set; } = PrintOrientation.Portrait;
@@ -47,6 +52,7 @@ namespace AssetTagPrinter
                 RightMargin = RightMargin,
                 BottomMargin = BottomMargin,
                 ExtraLineSpacing = ExtraLineSpacing,
+                LogoMaxWidthPercent = LogoMaxWidthPercent,
                 Orientation = Orientation,
                 AutoScaleFonts = AutoScaleFonts
             };

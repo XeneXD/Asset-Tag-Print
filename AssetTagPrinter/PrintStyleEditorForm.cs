@@ -28,6 +28,7 @@ namespace AssetTagPrinter
         private readonly NumericUpDown _nudLeftMargin = new NumericUpDown();
         private readonly NumericUpDown _nudTopMargin = new NumericUpDown();
         private readonly NumericUpDown _nudLineSpacing = new NumericUpDown();
+        private readonly NumericUpDown _nudLogoMaxWidth = new NumericUpDown();
 
         private readonly Button _btnOk = new Button();
         private readonly Button _btnCancel = new Button();
@@ -53,7 +54,7 @@ namespace AssetTagPrinter
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            ClientSize = new Size(620, 370);
+            ClientSize = new Size(620, 410);
 
             Label lblInfo = new Label
             {
@@ -75,7 +76,7 @@ namespace AssetTagPrinter
                 Left = 400,
                 Top = 40,
                 Width = 205,
-                Height = 180
+                Height = 220
             };
 
             Label lblLeft = new Label { Left = 12, Top = 30, Width = 90, Text = "Left margin:" };
@@ -102,24 +103,34 @@ namespace AssetTagPrinter
             _nudLineSpacing.Maximum = 20;
             _nudLineSpacing.DecimalPlaces = 0;
 
+            Label lblLogoWidth = new Label { Left = 12, Top = 150, Width = 90, Text = "Logo size (%):" };
+            _nudLogoMaxWidth.Left = 105;
+            _nudLogoMaxWidth.Top = 147;
+            _nudLogoMaxWidth.Width = 70;
+            _nudLogoMaxWidth.Minimum = 10;
+            _nudLogoMaxWidth.Maximum = 200;
+            _nudLogoMaxWidth.DecimalPlaces = 0;
+
             gboxLayout.Controls.Add(lblLeft);
             gboxLayout.Controls.Add(_nudLeftMargin);
             gboxLayout.Controls.Add(lblTop);
             gboxLayout.Controls.Add(_nudTopMargin);
             gboxLayout.Controls.Add(lblSpacing);
             gboxLayout.Controls.Add(_nudLineSpacing);
+            gboxLayout.Controls.Add(lblLogoWidth);
+            gboxLayout.Controls.Add(_nudLogoMaxWidth);
             Controls.Add(gboxLayout);
 
             _btnOk.Text = "Apply";
             _btnOk.Left = 420;
-            _btnOk.Top = 315;
+            _btnOk.Top = 355;
             _btnOk.Width = 85;
             _btnOk.DialogResult = DialogResult.OK;
             _btnOk.Click += BtnOk_Click;
 
             _btnCancel.Text = "Cancel";
             _btnCancel.Left = 520;
-            _btnCancel.Top = 315;
+            _btnCancel.Top = 355;
             _btnCancel.Width = 85;
             _btnCancel.DialogResult = DialogResult.Cancel;
 
@@ -211,6 +222,7 @@ namespace AssetTagPrinter
             _nudLeftMargin.Value = (decimal)_workingSettings.LeftMargin;
             _nudTopMargin.Value = (decimal)_workingSettings.TopMargin;
             _nudLineSpacing.Value = (decimal)_workingSettings.ExtraLineSpacing;
+            _nudLogoMaxWidth.Value = (decimal)_workingSettings.LogoMaxWidthPercent;
         }
 
         private static void SetSectionControls(
@@ -247,7 +259,8 @@ namespace AssetTagPrinter
                 Body = ReadSection(_cmbBodyFamily, _nudBodySize, _chkBodyBold, _chkBodyItalic, _chkBodyUnderline),
                 LeftMargin = (float)_nudLeftMargin.Value,
                 TopMargin = (float)_nudTopMargin.Value,
-                ExtraLineSpacing = (float)_nudLineSpacing.Value
+                ExtraLineSpacing = (float)_nudLineSpacing.Value,
+                LogoMaxWidthPercent = (float)_nudLogoMaxWidth.Value
             };
         }
 

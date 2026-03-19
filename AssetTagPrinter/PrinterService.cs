@@ -686,9 +686,8 @@ namespace AssetTagPrinter
                             y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
                         }
 
-                        y = DrawCenteredLine(e.Graphics, "Yoshii Software Solution Philippines", header, settings.LeftMargin, contentWidth, y, 9f, settings.ExtraLineSpacing);
-                        y = DrawCenteredLine(e.Graphics, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondary, settings.LeftMargin, contentWidth, y, 7f, settings.ExtraLineSpacing);
-                        y = DrawCenteredLine(e.Graphics, "(032) 254-0302", secondary, settings.LeftMargin, contentWidth, y, 7f, settings.ExtraLineSpacing);
+                        // Draw logo instead of company header text
+                        y = DrawLogo(e.Graphics, settings, settings.LeftMargin, contentWidth, y);
 
                         y += 4;
                         int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
@@ -742,6 +741,53 @@ namespace AssetTagPrinter
                 float x = left + Math.Max(0f, (width - textWidth) / 2f);
                 g.DrawString(text, fitted, Brushes.Black, x, y);
                 y += fitted.GetHeight(g) + extraSpacing;
+            }
+
+            return y;
+        }
+
+        private static float DrawLogo(Graphics g, PrintStyleSettings settings, float left, float width, float y)
+        {
+            try
+            {
+                // Try to load logo from Logo folder relative to executable directory
+                string exePath = System.AppDomain.CurrentDomain.BaseDirectory;
+                string logoPath = System.IO.Path.Combine(exePath, "Logo", "one_line with background.png");
+
+                if (!System.IO.File.Exists(logoPath))
+                {
+                    // Try relative to current directory
+                    logoPath = System.IO.Path.Combine("Logo", "one_line with background.png");
+                }
+
+                if (System.IO.File.Exists(logoPath))
+                {
+                    using (Image logoImage = Image.FromFile(logoPath))
+                    {
+                        // Scale logo to fit within content width using the logo size setting
+                        float maxLogoWidth = width * (settings.LogoMaxWidthPercent / 100f);
+                        float scale = logoImage.Width > maxLogoWidth ? maxLogoWidth / logoImage.Width : 1f;
+                        int scaledWidth = (int)(logoImage.Width * scale);
+                        int scaledHeight = (int)(logoImage.Height * scale);
+
+                        // Center horizontally
+                        float logoX = left + Math.Max(0f, (width - scaledWidth) / 2f);
+                        g.DrawImage(logoImage, logoX, y, scaledWidth, scaledHeight);
+                        y += scaledHeight + 5;
+                    }
+                }
+                else
+                {
+                    // Fallback if logo not found - draw placeholder
+                    g.DrawString("[Logo not found]", new Font("Arial", 8), Brushes.Gray, left, y);
+                    y += 20;
+                }
+            }
+            catch (Exception ex)
+            {
+                // If there's an error loading logo, draw error message
+                g.DrawString($"[Logo error: {ex.Message}]", new Font("Arial", 7), Brushes.Red, left, y);
+                y += 15;
             }
 
             return y;
