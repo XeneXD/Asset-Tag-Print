@@ -7,6 +7,28 @@ namespace AssetTagPrinter
 {
     public class CsvService
     {
+        /// <summary>
+        /// CSV Format Specification - Column indices for the required format:
+        /// Id, Ref, Label, Barcode, Warehouse (optional), AcquisitionDate (optional)
+        /// 
+        /// Example Header:
+        /// Id,Ref,Label,Barcode,Warehouse,AcquisitionDate
+        /// 
+        /// Whoever generates the CSV must follow this exact format.
+        /// </summary>
+        private const int ID_IDX = 0;
+        private const int REF_IDX = 1;
+        private const int LABEL_IDX = 2;
+        private const int BARCODE_IDX = 3;
+        private const int WAREHOUSE_IDX = 4;
+        private const int ACQDATE_IDX = 5;
+
+        private const int MIN_REQUIRED_COLUMNS = 4; // Id, Ref, Label, Barcode are required
+
+        // Define the expected format for clarity
+        private static readonly string[] EXPECTED_HEADERS = new[] { "Id", "Ref", "Label", "Barcode", "Warehouse", "AcquisitionDate" };
+        private static readonly string EXPECTED_FORMAT = "Id,Ref,Label,Barcode,Warehouse,AcquisitionDate";
+
         public IEnumerable<Asset> ReadAssets(string filePath)
         {
             if (!File.Exists(filePath))
@@ -20,27 +42,11 @@ namespace AssetTagPrinter
                 yield break;
             }
 
-            // Header-aware parsing to support different CSV exports (e.g. "Ref." and "Default warehouse").
+            // Validate header
             var headerValues = SplitCsvSimple(allLines[0]);
-            var headerIndex = headerValues
-                .Select((name, idx) => new { name = (name ?? string.Empty).Trim(), idx })
-                .Where(x => !string.IsNullOrWhiteSpace(x.name))
-                .GroupBy(x => x.name, System.StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First().idx, System.StringComparer.OrdinalIgnoreCase);
+            ValidateAndReportCsvFormat(headerValues);
 
-            int idIndex = GetIndex(headerIndex, "Id", "ID");
-            int refIndex = GetIndex(headerIndex, "Ref", "Ref.", "Reference", "Asset Ref");
-            int labelIndex = GetIndex(headerIndex, "Label", "Name", "Product", "Product name");
-            int barcodeIndex = GetIndex(headerIndex, "Barcode", "Bar code", "BarCode");
-            int warehouseIndex = GetIndex(headerIndex, "Default warehouse", "Warehouse", "Default Warehouse");
-            int acquisitionDateIndex = GetIndex(headerIndex, "AcquisitionDate", "Acquisition Date", "Acq. Date");
-
-            // Fallback for the simple 4-column CSV: Id,Ref,Label,Barcode
-            if (idIndex < 0) idIndex = 0;
-            if (refIndex < 0) refIndex = 1;
-            if (labelIndex < 0) labelIndex = 2;
-            if (barcodeIndex < 0) barcodeIndex = 3;
-
+            // Parse data rows using the defined column indices
             foreach (var line in allLines.Skip(1))
             {
                 if (string.IsNullOrWhiteSpace(line))
@@ -49,12 +55,15 @@ namespace AssetTagPrinter
                 }
 
                 var values = SplitCsvSimple(line);
-                if (values.Length <= System.Math.Max(2, idIndex))
+
+                // Skip rows with insufficient columns
+                if (values.Length < MIN_REQUIRED_COLUMNS)
                 {
                     continue;
                 }
 
-                if (!TryGet(values, idIndex, out var idText) || !int.TryParse(idText, out var id))
+                // Parse required Id field
+                if (!TryGet(values, ID_IDX, out var idText) || !int.TryParse(idText, out var id))
                 {
                     continue;
                 }
@@ -62,26 +71,46 @@ namespace AssetTagPrinter
                 yield return new Asset
                 {
                     Id = id,
-                    Ref = GetOrEmpty(values, refIndex),
-                    Label = GetOrEmpty(values, labelIndex),
-                    Barcode = GetOrEmpty(values, barcodeIndex),
-                    Warehouse = warehouseIndex >= 0 ? GetOrEmpty(values, warehouseIndex) : string.Empty,
-                    AcquisitionDate = acquisitionDateIndex >= 0 ? GetOrEmpty(values, acquisitionDateIndex) : string.Empty
+                    Ref = GetOrEmpty(values, REF_IDX),
+                    Label = GetOrEmpty(values, LABEL_IDX),
+                    Barcode = GetOrEmpty(values, BARCODE_IDX),
+                    Warehouse = GetOrEmpty(values, WAREHOUSE_IDX),
+                    AcquisitionDate = GetOrEmpty(values, ACQDATE_IDX)
                 };
             }
         }
 
-        private static int GetIndex(Dictionary<string, int> headerIndex, params string[] names)
+        private static void ValidateAndReportCsvFormat(string[] headerValues)
         {
-            foreach (var name in names)
+            if (headerValues.Length < MIN_REQUIRED_COLUMNS)
             {
-                if (headerIndex.TryGetValue(name, out var idx))
+                throw new InvalidOperationException(
+                    $"CSV header has too few columns. Need at least 4, got {headerValues.Length}.\r\n" +
+                    $"Use: {EXPECTED_FORMAT}");
+            }
+
+            // Trim headers for comparison
+            var trimmedHeaders = headerValues.Select(h => (h ?? string.Empty).Trim()).ToArray();
+
+            // Check all required columns and collect errors
+            var requiredHeaders = EXPECTED_HEADERS.Take(MIN_REQUIRED_COLUMNS).ToArray();
+            var errors = new List<string>();
+
+            for (int i = 0; i < MIN_REQUIRED_COLUMNS; i++)
+            {
+                if (!trimmedHeaders[i].Equals(requiredHeaders[i], System.StringComparison.Ordinal))
                 {
-                    return idx;
+                    errors.Add($"- Column {i + 1}: Change '{trimmedHeaders[i]}' to '{requiredHeaders[i]}'");
                 }
             }
 
-            return -1;
+            // If there are errors, report them all
+            if (errors.Count > 0)
+            {
+                var errorMessage = "Fix the column names in your CSV:\r\n" + string.Join("\r\n", errors) + 
+                                   $"\r\n\r\nCorrect order: {EXPECTED_FORMAT}";
+                throw new InvalidOperationException(errorMessage);
+            }
         }
 
         private static bool TryGet(string[] values, int index, out string text)
