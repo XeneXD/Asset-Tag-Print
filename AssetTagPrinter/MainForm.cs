@@ -99,14 +99,6 @@ namespace AssetTagPrinter
         private void MainForm_Load(object sender, EventArgs e)
         {
             RefreshPrinterStatus();
-
-            // Auto-load default CSV when available so the grid is populated on startup.
-            var defaultCsvPath = Path.Combine(AppContext.BaseDirectory, "data.csv");
-            if (File.Exists(defaultCsvPath))
-            {
-                LoadAssetsIntoGrid(defaultCsvPath);
-                ConfigureGridColumns();
-            }
         }
 
         private void RefreshPrinterStatus()

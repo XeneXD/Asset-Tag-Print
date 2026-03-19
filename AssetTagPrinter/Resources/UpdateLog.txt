@@ -1,0 +1,37 @@
+Update log
+
+Latest Version
+- Main form starts with empty grid (no auto-load on startup)
+- Users must click "Load CSV" to populate the asset list
+- Help text now loaded from external .txt files (cached at startup)
+- Pagination system: Displays 12 items per page for large asset lists
+- Page navigation with Previous/Next buttons and page indicator
+- Pagination resets to page 1 when filters change
+- Optimized for ETD (Electronic Tag Display) systems and batch processing
+- Pagination works well with large CSV files (1000+ items)
+- Removed load limit feature in favor of intuitive pagination
+- Acquisition date now displays with month (e.g., "Jan 2024")
+- New "Installation & Setup" tab with comprehensive printer driver setup instructions
+- Added support documentation for Epson TM series (TM-T88, TM-T90X, TM-T100, TM-M30)
+- Added support documentation for Star Micronics (M244A, mPOP, SM-T11, SM-L300)
+- Installation guide covers OPOS v1.14+ driver setup, APD configuration, and troubleshooting
+- Added font styling, print layout, and brand-specific setup instructions
+- Included links to official manufacturer driver download sites
+- Logo updated to "one_line with background 111.png"
+- UI Refactoring: Replaced separate Warehouse dropdown with unified Category-based filtering
+- New Category dropdown with options: None (all) or Warehouse
+- Progressive filter: Second "Filter by" dropdown appears/updates based on selected category
+- Cleaner, less redundant UI that's more intuitive for asset filtering
+
+Previous Updates
+- CSV parsing now supports quoted fields (commas inside text no longer shift columns).
+- Warehouse filter now runs before load-limit (limit no longer gate-keeps matching rows).
+- Enter key now applies Warehouse/Limit filters for keyboard users.
+- Enter key now toggles the Limit checkbox when focused (M1-like behavior).
+- Warehouse dropdown now supports filtering rows where warehouse is blank.
+- POS/Windows printing support and preview.
+- Preview and printing share the same line layout builder (so they match).
+- Multi-row selection enabled for printing (select multiple rows to print in order).
+- Optional CSV load limit (limit to first N rows for large files).
+- Warehouse filter (dropdown based on "Default warehouse" column when present).
+- Help / Updates window with usage notes and update log.

@@ -1,0 +1,49 @@
+Quick start
+1) Click "Load CSV" and select your file.
+2) Click a row to see the tag preview on the right.
+3) Optional: click "Print Preview" to review tags one-by-one.
+4) Click "Print Selected (or All)" to print:
+   - If a row is selected, it prints that row.
+   - If nothing is selected, it prints all rows.
+
+Pagination
+- The asset list displays 12 items per page for better performance and usability.
+- Use "< Previous" and "Next >" buttons to navigate through pages.
+- Page indicator shows your current position (e.g., "Page 1 of 5").
+- When you change filters, pagination resets to page 1.
+- Pagination works well with ETD systems for batch processing large asset lists.
+- Perfect for handling large CSV files with thousands of items.
+
+Filtering assets
+- Use the "Category" dropdown to choose a filter type:
+  * Select "None" for no filtering (shows all assets)
+  * Select "Warehouse" to filter by warehouse location
+- When you select a category, a second dropdown "Filter by:" appears
+- Choose the specific value (warehouse name)
+- The asset list automatically updates to show matching items
+- This progressive filtering is cleaner and more intuitive than separate dropdowns
+
+Keyboard shortcuts
+- Ctrl+O: Load CSV
+- Ctrl+P: Print selected (or all)
+- Ctrl+Shift+P: Print preview
+- Ctrl+D: Diagnostics
+- F1: Help / Updates
+- Ctrl+W: Focus Category filter
+- Esc: Close this Help window
+
+CSV format (current)
+- The app expects a header row, then data rows.
+- Header names are used when available (e.g. Ref., Label, Barcode, Default warehouse).
+- Fallback for simple files without matching headers:
+    0 = Id (must be a number)
+    1 = Ref
+    2 = Label
+    3 = Barcode (optional)
+    4 = Warehouse (optional)
+
+Tips
+- If the printer status says USB detected but not installed, install the POS/Windows driver so it appears as a printer queue or POS device.
+- If labels look cut off, reduce label text length or adjust the printer's paper/width settings.
+- Warehouse dropdown includes a "(Blank Warehouse)" option when empty warehouse values exist in the CSV.
+- Pagination handles large datasets efficiently (1000+ items) and integrates seamlessly with ETD systems.
