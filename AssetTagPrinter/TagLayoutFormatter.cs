@@ -15,6 +15,7 @@ namespace AssetTagPrinter
         {
             string barcode = Truncate(asset.Barcode, PreviewInnerWidth);
             string refText = $"ID: {asset.Ref}";
+            string acquisitionDate = FormatAcquisitionDate(asset.AcquisitionDate);
             string label = string.IsNullOrWhiteSpace(asset.Label) ? string.Empty : Truncate(asset.Label, PreviewInnerWidth);
 
             var lines = new List<string>
@@ -26,7 +27,6 @@ namespace AssetTagPrinter
                 BoxDivider(PreviewInnerWidth),
                 BoxLine(barcode, PreviewInnerWidth),
                 /*BoxLine("(High density)", PreviewInnerWidth),*/
-                BoxDivider(PreviewInnerWidth),
                 BoxLine(refText, PreviewInnerWidth)
             };
 
@@ -35,6 +35,7 @@ namespace AssetTagPrinter
                 lines.Add(BoxLine(label, PreviewInnerWidth));
             }
 
+            lines.Add(BoxLine(acquisitionDate, PreviewInnerWidth));
             lines.Add(BoxBottom(PreviewInnerWidth));
             return string.Join("\r\n", lines);
         }
@@ -47,8 +48,9 @@ namespace AssetTagPrinter
         public static IReadOnlyList<string> BuildPosReceiptLines(Asset asset, int receiptWidth)
         {
             int width = Math.Max(24, receiptWidth);
-            string refText = Truncate($"ID: {asset.Ref}", width - 2);
+            string refText = Truncate($"{asset.Ref}", width - 2);
             string label = Truncate(asset.Label, width - 2);
+            string acquisitionDate = FormatAcquisitionDate(asset.AcquisitionDate);
 
             var lines = new List<string>
             {
@@ -65,6 +67,7 @@ namespace AssetTagPrinter
                 lines.Add(Center(label, width));
             }
 
+            lines.Add(Center(acquisitionDate, width));
             lines.Add(Divider('=', width));
             return lines;
         }
@@ -83,6 +86,37 @@ namespace AssetTagPrinter
             }
 
             return value.Substring(0, Math.Max(0, maxLength - 2)) + "..";
+        }
+
+        private static string FormatAcquisitionDate(string? dateString)
+        {
+            if (string.IsNullOrWhiteSpace(dateString))
+            {
+                return "Acq. Date: Not Recorded";
+            }
+
+            dateString = dateString!.Trim();
+
+            // Try to parse as a date to validate and extract year/month
+            if (DateTime.TryParse(dateString, out var date))
+            {
+                return $"Acq. Date: {date.Year}/{date.Month:D2}";
+            }
+
+            // If already in "YYYY/MM" format, validate and return
+            if (System.Text.RegularExpressions.Regex.IsMatch(dateString, @"^\d{4}/\d{1,2}$"))
+            {
+                return $"Acq. Date: {dateString}";
+            }
+
+            // If it's just a year
+            if (int.TryParse(dateString, out var year) && year >= 1900 && year <= 2100)
+            {
+                return $"Acq. Date: {year}/01";
+            }
+
+            // Invalid format
+            return "Acq. Date: Not Recorded";
         }
 
         private static string Pad(string text, int width)

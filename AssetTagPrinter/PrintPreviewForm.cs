@@ -189,12 +189,12 @@ namespace AssetTagPrinter
             {
                 // Try to load logo from Logo folder relative to executable directory
                 string exePath = System.AppDomain.CurrentDomain.BaseDirectory;
-                string logoPath = System.IO.Path.Combine(exePath, "Logo", "one_line with background.png");
+                string logoPath = System.IO.Path.Combine(exePath, "Logo", "black and white.jpg");
 
                 if (!System.IO.File.Exists(logoPath))
                 {
                     // Try relative to current directory
-                    logoPath = System.IO.Path.Combine("Logo", "one_line with background.png");
+                    logoPath = System.IO.Path.Combine("Logo", "black and white.jpg");
                 }
 
                 if (System.IO.File.Exists(logoPath))

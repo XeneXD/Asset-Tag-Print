@@ -33,6 +33,7 @@ namespace AssetTagPrinter
             int labelIndex = GetIndex(headerIndex, "Label", "Name", "Product", "Product name");
             int barcodeIndex = GetIndex(headerIndex, "Barcode", "Bar code", "BarCode");
             int warehouseIndex = GetIndex(headerIndex, "Default warehouse", "Warehouse", "Default Warehouse");
+            int acquisitionDateIndex = GetIndex(headerIndex, "AcquisitionDate", "Acquisition Date", "Acq. Date");
 
             // Fallback for the simple 4-column CSV: Id,Ref,Label,Barcode
             if (idIndex < 0) idIndex = 0;
@@ -64,7 +65,8 @@ namespace AssetTagPrinter
                     Ref = GetOrEmpty(values, refIndex),
                     Label = GetOrEmpty(values, labelIndex),
                     Barcode = GetOrEmpty(values, barcodeIndex),
-                    Warehouse = warehouseIndex >= 0 ? GetOrEmpty(values, warehouseIndex) : string.Empty
+                    Warehouse = warehouseIndex >= 0 ? GetOrEmpty(values, warehouseIndex) : string.Empty,
+                    AcquisitionDate = acquisitionDateIndex >= 0 ? GetOrEmpty(values, acquisitionDateIndex) : string.Empty
                 };
             }
         }

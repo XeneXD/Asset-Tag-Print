@@ -11,11 +11,15 @@ namespace AssetTagPrinter
     public partial class MainForm : Form
     {
         private const string BlankWarehouseOption = "(Blank Warehouse)";
+        private const int ItemsPerPage = 12;
+        
         private PrinterService? _printerService;
         private CsvService _csvService;
         private bool _isPrinting;
         private List<Asset> _loadedAssets = new List<Asset>();
+        private List<Asset> _filteredAssets = new List<Asset>();
         private PrintStyleSettings _printStyleSettings = PrintStyleSettings.CreateDefault();
+        private int _currentPage = 1;
 
         public MainForm()
         {
@@ -28,8 +32,8 @@ namespace AssetTagPrinter
             dataGridViewAssets.AllowUserToDeleteRows = false;
             dataGridViewAssets.AllowUserToOrderColumns = false;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
-            chkLimitLoad.CheckedChanged += FilterControlsChanged;
-            nudLoadLimit.ValueChanged += FilterControlsChanged;
+            btnPreviousPage.Click += btnPreviousPage_Click;
+            btnNextPage.Click += btnNextPage_Click;
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
         }
@@ -75,29 +79,8 @@ namespace AssetTagPrinter
                 return true;
             }
 
-            if (keyData == (Keys.Control | Keys.L))
-            {
-                if (chkLimitLoad != null)
-                {
-                    chkLimitLoad.Checked = !chkLimitLoad.Checked;
-                }
-
-                if (nudLoadLimit != null && nudLoadLimit.CanFocus)
-                {
-                    nudLoadLimit.Focus();
-                }
-
-                return true;
-            }
-
             if (keyData == Keys.Enter)
             {
-                if (chkLimitLoad != null && chkLimitLoad.Focused)
-                {
-                    chkLimitLoad.Checked = !chkLimitLoad.Checked;
-                    return true;
-                }
-
                 if (cmbCategory != null && (cmbCategory.Focused || cmbCategory.DroppedDown))
                 {
                     if (cmbCategory.DroppedDown)
@@ -105,12 +88,6 @@ namespace AssetTagPrinter
                         cmbCategory.DroppedDown = false;
                     }
 
-                    ApplyFilters();
-                    return true;
-                }
-
-                if (nudLoadLimit != null && nudLoadLimit.Focused)
-                {
                     ApplyFilters();
                     return true;
                 }
@@ -128,6 +105,7 @@ namespace AssetTagPrinter
             if (File.Exists(defaultCsvPath))
             {
                 LoadAssetsIntoGrid(defaultCsvPath);
+                ConfigureGridColumns();
             }
         }
 
@@ -218,6 +196,23 @@ namespace AssetTagPrinter
                         cmbFilterValue.Items.Add(w);
                     }
                 }
+                else if (selectedCategory == "Acquisition Date")
+                {
+                    lblFilterValue.Text = "Year:";
+                    var years = _loadedAssets
+                        .Where(a => !string.IsNullOrWhiteSpace(a.AcquisitionDate))
+                        .Select(a => ExtractYearFromAcquisitionDate(a.AcquisitionDate))
+                        .Where(y => y > 0)
+                        .Distinct()
+                        .OrderByDescending(y => y)
+                        .ToList();
+
+                    cmbFilterValue.Items.Add("All");
+                    foreach (var year in years)
+                    {
+                        cmbFilterValue.Items.Add(year.ToString());
+                    }
+                }
 
                 int idx = cmbFilterValue.Items.IndexOf(currentSelection);
                 cmbFilterValue.SelectedIndex = idx >= 0 ? idx : 0;
@@ -247,28 +242,76 @@ namespace AssetTagPrinter
                     view = view.Where(a => string.Equals((a.Warehouse ?? string.Empty).Trim(), selectedFilter, StringComparison.OrdinalIgnoreCase));
                 }
             }
-
-            if (chkLimitLoad != null && nudLoadLimit != null && chkLimitLoad.Checked)
+            else if (selectedCategory == "Acquisition Date" && !string.Equals(selectedFilter, "All", StringComparison.OrdinalIgnoreCase))
             {
-                view = view.Take((int)nudLoadLimit.Value);
+                if (int.TryParse(selectedFilter, out var selectedYear))
+                {
+                    view = view.Where(a => ExtractYearFromAcquisitionDate(a.AcquisitionDate) == selectedYear);
+                }
             }
 
-            var list = view.ToList();
-            dataGridViewAssets.DataSource = null;
-            dataGridViewAssets.DataSource = new BindingSource { DataSource = list };
+            // Store the filtered results for pagination
+            _filteredAssets = view.ToList();
+            _currentPage = 1; // Reset to first page when filters change
+            DisplayCurrentPage();
 
-            if (list.Count > 0)
+            return _filteredAssets.Count;
+        }
+
+        private void DisplayCurrentPage()
+        {
+            // Calculate pagination
+            int totalPages = (_filteredAssets.Count + ItemsPerPage - 1) / ItemsPerPage; // Ceiling division
+            if (totalPages == 0) totalPages = 1;
+            if (_currentPage > totalPages) _currentPage = totalPages;
+            if (_currentPage < 1) _currentPage = 1;
+
+            int startIndex = (_currentPage - 1) * ItemsPerPage;
+            int endIndex = Math.Min(startIndex + ItemsPerPage, _filteredAssets.Count);
+
+            var pageList = _filteredAssets.Skip(startIndex).Take(ItemsPerPage).ToList();
+
+            // Update grid
+            dataGridViewAssets.DataSource = null;
+            dataGridViewAssets.DataSource = new BindingSource { DataSource = pageList };
+
+            // Configure grid columns to show AcquisitionDateDisplay instead of AcquisitionDate
+            ConfigureGridColumns();
+
+            // Update pagination display
+            lblPageInfo.Text = $"Page {_currentPage} of {totalPages}";
+
+            // Update navigation button states
+            btnPreviousPage.Enabled = _currentPage > 1;
+            btnNextPage.Enabled = _currentPage < totalPages;
+
+            if (pageList.Count > 0)
             {
                 dataGridViewAssets.ClearSelection();
                 dataGridViewAssets.Rows[0].Selected = true;
-                UpdatePreviewPanel(list[0]);
+                UpdatePreviewPanel(pageList[0]);
             }
             else
             {
                 lblTagPreview.Text = string.Empty;
             }
+        }
 
-            return list.Count;
+        private void ConfigureGridColumns()
+        {
+            // Hide the raw AcquisitionDate column and ensure AcquisitionDateDisplay is visible
+            foreach (DataGridViewColumn col in dataGridViewAssets.Columns)
+            {
+                if (col.DataPropertyName == "AcquisitionDate")
+                {
+                    col.Visible = false;
+                }
+                else if (col.DataPropertyName == "AcquisitionDateDisplay")
+                {
+                    col.Visible = true;
+                    col.HeaderText = "Acq. Date";
+                }
+            }
         }
 
         private void cmbCategory_SelectedIndexChanged(object sender, EventArgs e)
@@ -282,14 +325,24 @@ namespace AssetTagPrinter
             ApplyFilters();
         }
 
-        private void FilterControlsChanged(object? sender, EventArgs e)
+        private void btnPreviousPage_Click(object? sender, EventArgs e)
         {
-            if (_loadedAssets.Count == 0)
+            if (_currentPage > 1)
             {
-                return;
+                _currentPage--;
+                DisplayCurrentPage();
             }
+        }
 
-            ApplyFilters();
+        private void btnNextPage_Click(object? sender, EventArgs e)
+        {
+            int totalPages = (_filteredAssets.Count + ItemsPerPage - 1) / ItemsPerPage;
+            if (totalPages == 0) totalPages = 1;
+            if (_currentPage < totalPages)
+            {
+                _currentPage++;
+                DisplayCurrentPage();
+            }
         }
 
         private void UpdatePreviewPanel(Asset asset)
@@ -424,6 +477,39 @@ namespace AssetTagPrinter
             {
                 help.ShowDialog(this);
             }
+        }
+
+        private int ExtractYearFromAcquisitionDate(string? dateString)
+        {
+            if (string.IsNullOrWhiteSpace(dateString))
+            {
+                return 0;
+            }
+
+            dateString = dateString!.Trim();
+
+            // Try to parse as a full date
+            if (DateTime.TryParse(dateString, out var date))
+            {
+                return date.Year;
+            }
+
+            // If already in "YYYY, MM" format
+            if (System.Text.RegularExpressions.Regex.IsMatch(dateString, @"^\d{4}"))
+            {
+                if (int.TryParse(dateString.Substring(0, 4), out var year))
+                {
+                    return year;
+                }
+            }
+
+            // If it's just a year
+            if (int.TryParse(dateString, out var yearOnly) && yearOnly >= 1900 && yearOnly <= 2100)
+            {
+                return yearOnly;
+            }
+
+            return 0;
         }
     }
 }

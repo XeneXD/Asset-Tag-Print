@@ -28,7 +28,7 @@ namespace AssetTagPrinter
         /// <summary>
         /// Maximum width for logo display as percentage (10-100%)
         /// </summary>
-        public float LogoMaxWidthPercent { get; set; } = 80f;
+        public float LogoMaxWidthPercent { get; set; } = 200f;
         
         /// <summary>
         /// Page orientation - automatically adjusts layout proportions

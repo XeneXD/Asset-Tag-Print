@@ -12,9 +12,9 @@ namespace AssetTagPrinter
         private System.Windows.Forms.Label lblPrinterStatus;
         private System.Windows.Forms.Button btnDiagnostics;
         private System.Windows.Forms.Button btnHelp;
-        private System.Windows.Forms.CheckBox chkLimitLoad;
-        private System.Windows.Forms.Label lblLoadLimit;
-        private System.Windows.Forms.NumericUpDown nudLoadLimit;
+        private System.Windows.Forms.Button btnPreviousPage;
+        private System.Windows.Forms.Button btnNextPage;
+        private System.Windows.Forms.Label lblPageInfo;
         private System.Windows.Forms.Label lblCategory;
         private System.Windows.Forms.ComboBox cmbCategory;
         private System.Windows.Forms.Label lblFilterValue;
@@ -41,16 +41,15 @@ namespace AssetTagPrinter
             this.lblPrinterStatus = new System.Windows.Forms.Label();
             this.btnDiagnostics = new System.Windows.Forms.Button();
             this.btnHelp = new System.Windows.Forms.Button();
-            this.chkLimitLoad = new System.Windows.Forms.CheckBox();
-            this.lblLoadLimit = new System.Windows.Forms.Label();
-            this.nudLoadLimit = new System.Windows.Forms.NumericUpDown();
+            this.btnPreviousPage = new System.Windows.Forms.Button();
+            this.btnNextPage = new System.Windows.Forms.Button();
+            this.lblPageInfo = new System.Windows.Forms.Label();
             this.lblCategory = new System.Windows.Forms.Label();
             this.cmbCategory = new System.Windows.Forms.ComboBox();
             this.lblFilterValue = new System.Windows.Forms.Label();
             this.cmbFilterValue = new System.Windows.Forms.ComboBox();
             this.btnPrintStyle = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewAssets)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudLoadLimit)).BeginInit();
             this.pnlTagPreview.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -59,7 +58,7 @@ namespace AssetTagPrinter
             this.dataGridViewAssets.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridViewAssets.Location = new System.Drawing.Point(12, 95);
             this.dataGridViewAssets.Name = "dataGridViewAssets";
-            this.dataGridViewAssets.Size = new System.Drawing.Size(500, 282);
+            this.dataGridViewAssets.Size = new System.Drawing.Size(500, 240);
             this.dataGridViewAssets.TabIndex = 6;
             // 
             // btnLoadCsv
@@ -102,47 +101,35 @@ namespace AssetTagPrinter
             this.btnPrintStyle.UseVisualStyleBackColor = true;
             this.btnPrintStyle.Click += new System.EventHandler(this.btnPrintStyle_Click);
             // 
-            // chkLimitLoad
+            // btnPreviousPage
             // 
-            this.chkLimitLoad.AutoSize = true;
-            this.chkLimitLoad.Location = new System.Drawing.Point(436, 16);
-            this.chkLimitLoad.Name = "chkLimitLoad";
-            this.chkLimitLoad.Size = new System.Drawing.Size(79, 17);
-            this.chkLimitLoad.TabIndex = 4;
-            this.chkLimitLoad.Text = "Limit load:";
-            this.chkLimitLoad.UseVisualStyleBackColor = true;
+            this.btnPreviousPage.Location = new System.Drawing.Point(12, 352);
+            this.btnPreviousPage.Name = "btnPreviousPage";
+            this.btnPreviousPage.Size = new System.Drawing.Size(75, 23);
+            this.btnPreviousPage.TabIndex = 4;
+            this.btnPreviousPage.Text = "< Previous";
+            this.btnPreviousPage.UseVisualStyleBackColor = true;
+            this.btnPreviousPage.Click += new System.EventHandler(this.btnPreviousPage_Click);
             // 
-            // lblLoadLimit
+            // btnNextPage
             // 
-            this.lblLoadLimit.AutoSize = true;
-            this.lblLoadLimit.Location = new System.Drawing.Point(586, 16);
-            this.lblLoadLimit.Name = "lblLoadLimit";
-            this.lblLoadLimit.Size = new System.Drawing.Size(34, 13);
-            this.lblLoadLimit.TabIndex = 10;
-            this.lblLoadLimit.TabStop = false;
-            this.lblLoadLimit.Text = "rows";
+            this.btnNextPage.Location = new System.Drawing.Point(90, 352);
+            this.btnNextPage.Name = "btnNextPage";
+            this.btnNextPage.Size = new System.Drawing.Size(75, 23);
+            this.btnNextPage.TabIndex = 5;
+            this.btnNextPage.Text = "Next >";
+            this.btnNextPage.UseVisualStyleBackColor = true;
+            this.btnNextPage.Click += new System.EventHandler(this.btnNextPage_Click);
             // 
-            // nudLoadLimit
+            // lblPageInfo
             // 
-            this.nudLoadLimit.Location = new System.Drawing.Point(521, 14);
-            this.nudLoadLimit.Maximum = new decimal(new int[] {
-            100000,
-            0,
-            0,
-            0});
-            this.nudLoadLimit.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.nudLoadLimit.Name = "nudLoadLimit";
-            this.nudLoadLimit.Size = new System.Drawing.Size(60, 20);
-            this.nudLoadLimit.TabIndex = 5;
-            this.nudLoadLimit.Value = new decimal(new int[] {
-            100,
-            0,
-            0,
-            0});
+            this.lblPageInfo.AutoSize = true;
+            this.lblPageInfo.Location = new System.Drawing.Point(170, 357);
+            this.lblPageInfo.Name = "lblPageInfo";
+            this.lblPageInfo.Size = new System.Drawing.Size(80, 13);
+            this.lblPageInfo.TabIndex = 10;
+            this.lblPageInfo.TabStop = false;
+            this.lblPageInfo.Text = "Page 1 of 1";
             // 
             // lblPrinterStatus
             // 
@@ -171,7 +158,8 @@ namespace AssetTagPrinter
             this.cmbCategory.FormattingEnabled = true;
             this.cmbCategory.Items.AddRange(new object[] {
             "None",
-            "Warehouse"});
+            "Warehouse",
+            "Acquisition Date"});
             this.cmbCategory.Location = new System.Drawing.Point(70, 49);
             this.cmbCategory.Name = "cmbCategory";
             this.cmbCategory.Size = new System.Drawing.Size(442, 21);
@@ -254,9 +242,9 @@ namespace AssetTagPrinter
             this.Controls.Add(this.cmbCategory);
             this.Controls.Add(this.lblCategory);
             this.Controls.Add(this.btnPrintStyle);
-            this.Controls.Add(this.lblLoadLimit);
-            this.Controls.Add(this.nudLoadLimit);
-            this.Controls.Add(this.chkLimitLoad);
+            this.Controls.Add(this.lblPageInfo);
+            this.Controls.Add(this.btnNextPage);
+            this.Controls.Add(this.btnPreviousPage);
             this.Controls.Add(this.btnHelp);
             this.Controls.Add(this.btnDiagnostics);
             this.Controls.Add(this.lblPrinterStatus);
@@ -269,7 +257,6 @@ namespace AssetTagPrinter
             this.Text = "Asset Tag Printer";
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewAssets)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nudLoadLimit)).EndInit();
             this.pnlTagPreview.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
