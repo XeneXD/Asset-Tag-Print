@@ -10,7 +10,7 @@ namespace AssetTagPrinter
         public string AcquisitionDate { get; set; } = string.Empty;
 
         /// <summary>
-        /// Formats the AcquisitionDate to display as "MMM YYYY" (e.g., "Jan 2024")
+        /// Formats the AcquisitionDate to display as "YYYY/MM" (e.g., "2024/04")
         /// </summary>
         public string AcquisitionDateDisplay
         {
@@ -22,7 +22,7 @@ namespace AssetTagPrinter
                 // Try to parse as a full date
                 if (DateTime.TryParse(AcquisitionDate, out var date))
                 {
-                    return date.ToString("MMM yyyy");
+                    return date.ToString("yyyy/MM");
                 }
 
                 // If already in "YYYY, MM" or similar format, try to extract and format it
@@ -37,15 +37,15 @@ namespace AssetTagPrinter
                             try
                             {
                                 var formattedDate = new DateTime(year, month, 1);
-                                return formattedDate.ToString("MMM yyyy");
+                                return formattedDate.ToString("yyyy/MM");
                             }
                             catch
                             {
-                                return $"{year}";
+                                return $"{year}/01";
                             }
                         }
 
-                        return $"{year}";
+                        return $"{year}/01";
                     }
                 }
 

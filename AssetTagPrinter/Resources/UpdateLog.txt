@@ -1,6 +1,44 @@
 Update log
 
-Latest Version
+Latest Version (1.2)
+- ROBUSTNESS: Button state management - Print/Preview buttons disabled until rows selected
+- ROBUSTNESS: CSV validation - empty files, missing data, invalid formats now show clear errors
+- ROBUSTNESS: Selection validation - prevents accidental printing with no selection
+- ROBUSTNESS: Success feedback - confirms number of assets printed/previewed
+- Enhanced Grid Lock Mode: Ctrl+Tab now correctly toggles grid mode ON/OFF
+- Smart Keyword Navigation: Focus intelligently switches between pagination buttons
+  * On Last Page: Next button disabled, focus moves to Previous
+  * On First Page: Previous button disabled, focus moves to Next
+  * Preserves focus position between grid mode and main window
+- Multi-select Workflow: 
+  * Space now toggles row selection consistently without auto-navigation
+  * Arrow keys navigate while preserving all selections
+  * Ctrl+A selects all rows, then Space to deselect specific ones
+  * Shift+A clears all selections
+- Grid Lock Mode ([GRID MODE] display):
+  * Proper enter/exit with Ctrl+Tab and Esc
+  * Focus restoration to previous button when exiting
+  * Manual cell navigation without auto-select behavior
+  * Fully isolated keyboard navigation for data grid
+- Code Quality: Removed redundant Ctrl+Tab handler in PreviewKeyDown
+- Code Quality: Extracted pagination calculation to reusable CalculateTotalPages() method
+- Keyboard accessibility fully tested and refined for power users
+- Acquisition date format: YYYY/MM display (e.g., "2024/03")
+
+Version 1.1
+- Version label now displays correctly (fixed corrupted version string)
+- Enhanced keyboard navigation for Category dropdown:
+  * Ctrl+W: Focus and open Category filter
+  * Space: Open dropdown when focused
+  * Enter: Select and apply filters
+  * Escape: Close dropdown
+- Enhanced keyboard navigation for Filter by dropdown:
+  * Ctrl+E: Focus and open Filter dropdown
+  * Tab: Jump from Category to Filter dropdown (auto-opens)
+  * Space: Open dropdown when focused
+  * Enter: Select and apply filters
+  * Escape: Close dropdown
+- Filter dropdowns now fully keyboard accessible for power users
 - Main form starts with empty grid (no auto-load on startup)
 - Users must click "Load CSV" to populate the asset list
 - Help text now loaded from external .txt files (cached at startup)
@@ -10,16 +48,8 @@ Latest Version
 - Optimized for ETD (Electronic Tag Display) systems and batch processing
 - Pagination works well with large CSV files (1000+ items)
 - Removed load limit feature in favor of intuitive pagination
-- Acquisition date now displays with month (e.g., "Jan 2024")
-- New "Installation & Setup" tab with comprehensive printer driver setup instructions
-- Added support documentation for Epson TM series (TM-T88, TM-T90X, TM-T100, TM-M30)
-- Added support documentation for Star Micronics (M244A, mPOP, SM-T11, SM-L300)
-- Installation guide covers OPOS v1.14+ driver setup, APD configuration, and troubleshooting
-- Added font styling, print layout, and brand-specific setup instructions
-- Included links to official manufacturer driver download sites
-- Logo updated to "one_line with background 111.png"
 - UI Refactoring: Replaced separate Warehouse dropdown with unified Category-based filtering
-- New Category dropdown with options: None (all) or Warehouse
+- New Category dropdown with options: None (all) or Warehouse or Acquisition Date
 - Progressive filter: Second "Filter by" dropdown appears/updates based on selected category
 - Cleaner, less redundant UI that's more intuitive for asset filtering
 

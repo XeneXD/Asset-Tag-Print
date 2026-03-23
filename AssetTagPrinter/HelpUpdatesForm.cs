@@ -97,7 +97,13 @@ namespace AssetTagPrinter
             try
             {
                 // Matches what Windows displays for "Product Version" in most WinForms apps.
-                return Application.ProductVersion ?? "unknown";
+                var version = Application.ProductVersion ?? "unknown";
+                // Strip out git commit hash (e.g., "1.1.0+dcd102230..." becomes "1.1.0")
+                if (version.Contains("+"))
+                {
+                    version = version.Substring(0, version.IndexOf("+"));
+                }
+                return version;
             }
             catch
             {

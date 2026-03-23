@@ -59,7 +59,8 @@ namespace AssetTagPrinter
             this.dataGridViewAssets.Location = new System.Drawing.Point(12, 95);
             this.dataGridViewAssets.Name = "dataGridViewAssets";
             this.dataGridViewAssets.Size = new System.Drawing.Size(500, 240);
-            this.dataGridViewAssets.TabIndex = 6;
+            this.dataGridViewAssets.TabStop = false;
+            this.dataGridViewAssets.TabIndex = 999;
             // 
             // btnLoadCsv
             // 
@@ -106,7 +107,7 @@ namespace AssetTagPrinter
             this.btnPreviousPage.Location = new System.Drawing.Point(12, 352);
             this.btnPreviousPage.Name = "btnPreviousPage";
             this.btnPreviousPage.Size = new System.Drawing.Size(75, 23);
-            this.btnPreviousPage.TabIndex = 4;
+            this.btnPreviousPage.TabIndex = 6;
             this.btnPreviousPage.Text = "< Previous";
             this.btnPreviousPage.UseVisualStyleBackColor = true;
             this.btnPreviousPage.Click += new System.EventHandler(this.btnPreviousPage_Click);
@@ -116,7 +117,7 @@ namespace AssetTagPrinter
             this.btnNextPage.Location = new System.Drawing.Point(90, 352);
             this.btnNextPage.Name = "btnNextPage";
             this.btnNextPage.Size = new System.Drawing.Size(75, 23);
-            this.btnNextPage.TabIndex = 5;
+            this.btnNextPage.TabIndex = 7;
             this.btnNextPage.Text = "Next >";
             this.btnNextPage.UseVisualStyleBackColor = true;
             this.btnNextPage.Click += new System.EventHandler(this.btnNextPage_Click);
@@ -163,7 +164,7 @@ namespace AssetTagPrinter
             this.cmbCategory.Location = new System.Drawing.Point(70, 49);
             this.cmbCategory.Name = "cmbCategory";
             this.cmbCategory.Size = new System.Drawing.Size(442, 21);
-            this.cmbCategory.TabIndex = 6;
+            this.cmbCategory.TabIndex = 4;
             this.cmbCategory.SelectedIndexChanged += new System.EventHandler(this.cmbCategory_SelectedIndexChanged);
             // 
             // lblFilterValue
@@ -184,7 +185,7 @@ namespace AssetTagPrinter
             this.cmbFilterValue.Location = new System.Drawing.Point(70, 67);
             this.cmbFilterValue.Name = "cmbFilterValue";
             this.cmbFilterValue.Size = new System.Drawing.Size(442, 21);
-            this.cmbFilterValue.TabIndex = 7;
+            this.cmbFilterValue.TabIndex = 5;
             this.cmbFilterValue.Visible = false;
             this.cmbFilterValue.SelectedIndexChanged += new System.EventHandler(this.cmbFilterValue_SelectedIndexChanged);
             // 
@@ -217,7 +218,7 @@ namespace AssetTagPrinter
             this.btnPrint.Location = new System.Drawing.Point(12, 383);
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(376, 43);
-            this.btnPrint.TabIndex = 7;
+            this.btnPrint.TabIndex = 8;
             this.btnPrint.Text = "Print Selected (or All)";
             this.btnPrint.UseVisualStyleBackColor = true;
             this.btnPrint.Click += new System.EventHandler(this.btnPrint_Click);
@@ -227,7 +228,7 @@ namespace AssetTagPrinter
             this.btnPrintPreview.Location = new System.Drawing.Point(412, 383);
             this.btnPrintPreview.Name = "btnPrintPreview";
             this.btnPrintPreview.Size = new System.Drawing.Size(376, 43);
-            this.btnPrintPreview.TabIndex = 8;
+            this.btnPrintPreview.TabIndex = 9;
             this.btnPrintPreview.Text = "Print Preview";
             this.btnPrintPreview.UseVisualStyleBackColor = true;
             this.btnPrintPreview.Click += new System.EventHandler(this.btnPrintPreview_Click);

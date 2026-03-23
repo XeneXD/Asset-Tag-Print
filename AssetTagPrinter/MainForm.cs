@@ -12,10 +12,14 @@ namespace AssetTagPrinter
     {
         private const string BlankWarehouseOption = "(Blank Warehouse)";
         private const int ItemsPerPage = 12;
+        private const string GRID_LOCK_TITLE_SUFFIX = " [GRID MODE]";
         
         private PrinterService? _printerService;
         private CsvService _csvService;
         private bool _isPrinting;
+        private bool _isGridFocusLocked; // Lock navigation to data grid
+        private Control? _previousFocusedControl; // Track control that was focused before entering grid mode
+        private string _originalTitle = ""; // Store original form title
         private List<Asset> _loadedAssets = new List<Asset>();
         private List<Asset> _filteredAssets = new List<Asset>();
         private PrintStyleSettings _printStyleSettings = PrintStyleSettings.CreateDefault();
@@ -25,6 +29,7 @@ namespace AssetTagPrinter
         {
             InitializeComponent();
             _csvService = new CsvService();
+            _originalTitle = Text;
             dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewAssets.MultiSelect = true;
             dataGridViewAssets.ReadOnly = true;
@@ -32,10 +37,262 @@ namespace AssetTagPrinter
             dataGridViewAssets.AllowUserToDeleteRows = false;
             dataGridViewAssets.AllowUserToOrderColumns = false;
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
+            dataGridViewAssets.PreviewKeyDown += DataGridView_PreviewKeyDown; // Handle Ctrl+Tab in grid
+            dataGridViewAssets.KeyDown += DataGridView_KeyDown; // Backup handler for Ctrl+Tab
+            dataGridViewAssets.SelectionChanged += DataGridView_SelectionChanged; // Update button states on selection change
             btnPreviousPage.Click += btnPreviousPage_Click;
             btnNextPage.Click += btnNextPage_Click;
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
+            UpdateButtonStates(); // Initialize button states
+        }
+
+        /// <summary>
+        /// Toggle grid lock mode on/off with proper state management and visual feedback
+        /// </summary>
+        private void ToggleGridLockMode()
+        {
+            if (_isGridFocusLocked)
+            {
+                // Exit lock mode
+                ExitGridLockMode();
+            }
+            else
+            {
+                // Enter lock mode
+                EnterGridLockMode();
+            }
+        }
+
+        /// <summary>
+        /// Enter grid lock mode - focus grid and disable other navigation
+        /// </summary>
+        private void EnterGridLockMode()
+        {
+            if (dataGridViewAssets != null && dataGridViewAssets.CanFocus && dataGridViewAssets.Rows.Count > 0)
+            {
+                // Save the control that currently has focus so we can restore it later
+                _previousFocusedControl = ActiveControl;
+                
+                _isGridFocusLocked = true;
+                dataGridViewAssets.Focus();
+                
+                // Select first cell if no selection exists
+                if (dataGridViewAssets.CurrentCell == null)
+                {
+                    dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
+                }
+                
+                // Visual feedback: update title to show grid mode is active
+                Text = _originalTitle + GRID_LOCK_TITLE_SUFFIX;
+            }
+        }
+
+        /// <summary>
+        /// Exit grid lock mode - return focus to main window
+        /// </summary>
+        private void ExitGridLockMode()
+        {
+            _isGridFocusLocked = false;
+            
+            // Restore original title
+            Text = _originalTitle;
+            
+            // Try to return to the previous control if it's enabled, otherwise focus a default control
+            if (_previousFocusedControl != null && _previousFocusedControl.CanFocus && _previousFocusedControl.Enabled)
+            {
+                _previousFocusedControl.Focus();
+            }
+            else
+            {
+                // Fallback: focus Load CSV button
+                if (btnLoadCsv != null && btnLoadCsv.CanFocus)
+                {
+                    btnLoadCsv.Focus();
+                }
+            }
+        }
+
+
+
+        /// <summary>
+        /// Update button states based on asset data and selection status
+        /// </summary>
+        private void UpdateButtonStates()
+        {
+            bool hasAssets = dataGridViewAssets.Rows.Count > 0;
+            bool hasSelection = dataGridViewAssets.SelectedRows.Count > 0;
+
+            // Print and Preview require assets and selection
+            btnPrint.Enabled = hasAssets && hasSelection && !_isPrinting;
+            btnPrintPreview.Enabled = hasAssets && hasSelection;
+            btnPrintStyle.Enabled = hasAssets;
+            
+            // Pagination buttons
+            btnPreviousPage.Enabled = hasAssets && _currentPage > 1;
+            btnNextPage.Enabled = hasAssets && _currentPage < (int)Math.Ceiling((double)_loadedAssets.Count / ItemsPerPage);
+        }
+
+        /// <summary>
+        /// Handle grid selection changes to update button states
+        /// </summary>
+        private void DataGridView_SelectionChanged(object? sender, EventArgs e)
+        {
+            UpdateButtonStates();
+        }
+
+        private void DataGridView_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // Backup handler: Check for Ctrl+Tab to toggle lock mode
+            if (e.Control && e.KeyCode == Keys.Tab && _isGridFocusLocked)
+            {
+                e.Handled = true; // Prevent grid from handling it
+                ExitGridLockMode();
+            }
+
+            // While in grid lock mode, handle multi-select shortcuts
+            if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Rows.Count > 0)
+            {
+                // Ctrl+A: Select all rows
+                if (e.Control && e.KeyCode == Keys.A)
+                {
+                    dataGridViewAssets.SelectAll();
+                    // Ensure CurrentCell is set so Space works immediately after
+                    if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
+                    {
+                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
+                    }
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    return;
+                }
+
+                // Space: Toggle selection of current row
+                if (e.KeyCode == Keys.Space)
+                {
+                    if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
+                    {
+                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
+                    }
+                    
+                    if (dataGridViewAssets.CurrentCell != null)
+                    {
+                        int rowIndex = dataGridViewAssets.CurrentCell.RowIndex;
+                        
+                        // Store all currently selected rows
+                        List<int> selectedIndices = new List<int>();
+                        foreach (DataGridViewRow row in dataGridViewAssets.SelectedRows)
+                        {
+                            selectedIndices.Add(row.Index);
+                        }
+                        
+                        // Toggle the current row
+                        if (selectedIndices.Contains(rowIndex))
+                        {
+                            selectedIndices.Remove(rowIndex); // Deselect
+                        }
+                        else
+                        {
+                            selectedIndices.Add(rowIndex); // Select
+                        }
+                        
+                        // Use BeginInvoke to apply selections after the grid finishes processing
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            dataGridViewAssets.ClearSelection();
+                            foreach (int idx in selectedIndices)
+                            {
+                                if (idx >= 0 && idx < dataGridViewAssets.Rows.Count)
+                                {
+                                    dataGridViewAssets.Rows[idx].Selected = true;
+                                }
+                            }
+                        }));
+                        
+                        e.Handled = true;
+                        e.SuppressKeyPress = true;
+                        return;
+                    }
+                }
+
+                // Shift+A: Deselect all (convenience shortcut)
+                if (e.Shift && e.KeyCode == Keys.A)
+                {
+                    dataGridViewAssets.ClearSelection();
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    return;
+                }
+
+                // Arrow keys: Navigate without auto-selecting (preserve existing selections)
+                if ((e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || 
+                    e.KeyCode == Keys.Left || e.KeyCode == Keys.Right) && _isGridFocusLocked)
+                {
+                    // Store the current selection
+                    List<int> selectedRowIndices = new List<int>();
+                    foreach (DataGridViewRow row in dataGridViewAssets.SelectedRows)
+                    {
+                        selectedRowIndices.Add(row.Index);
+                    }
+
+                    // Manually navigate without letting grid auto-select
+                    int currentRow = dataGridViewAssets.CurrentCell?.RowIndex ?? 0;
+                    int currentCol = dataGridViewAssets.CurrentCell?.ColumnIndex ?? 0;
+                    
+                    int newRow = currentRow;
+                    int newCol = currentCol;
+                    
+                    if (e.KeyCode == Keys.Up && currentRow > 0) newRow--;
+                    if (e.KeyCode == Keys.Down && currentRow < dataGridViewAssets.Rows.Count - 1) newRow++;
+                    if (e.KeyCode == Keys.Left && currentCol > 0) newCol--;
+                    if (e.KeyCode == Keys.Right && currentCol < dataGridViewAssets.Columns.Count - 1) newCol++;
+                    
+                    // Set new current cell (this navigates without auto-selecting)
+                    if (newRow >= 0 && newRow < dataGridViewAssets.Rows.Count &&
+                        newCol >= 0 && newCol < dataGridViewAssets.Columns.Count)
+                    {
+                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[newRow].Cells[newCol];
+                    }
+                    
+                    // Re-select the previously selected rows after navigation
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        dataGridViewAssets.ClearSelection();
+                        foreach (int rowIndex in selectedRowIndices)
+                        {
+                            if (rowIndex >= 0 && rowIndex < dataGridViewAssets.Rows.Count)
+                            {
+                                dataGridViewAssets.Rows[rowIndex].Selected = true;
+                            }
+                        }
+                    }));
+                    
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void DataGridView_PreviewKeyDown(object? sender, PreviewKeyDownEventArgs e)
+        {
+            // When in grid lock mode, mark Space and selection shortcuts as input keys to prevent default behavior
+            if (_isGridFocusLocked)
+            {
+                // Space key for toggle selection
+                if (e.KeyCode == Keys.Space)
+                {
+                    e.IsInputKey = true;
+                }
+                // Ctrl+A for select all
+                if (e.Control && e.KeyCode == Keys.A)
+                {
+                    e.IsInputKey = true;
+                }
+                // Shift+A for deselect all
+                if (e.Shift && e.KeyCode == Keys.A)
+                {
+                    e.IsInputKey = true;
+                }
+            }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -75,8 +332,60 @@ namespace AssetTagPrinter
                 if (cmbCategory != null && cmbCategory.CanFocus)
                 {
                     cmbCategory.Focus();
+                    cmbCategory.DroppedDown = true;
                 }
                 return true;
+            }
+
+            if (keyData == (Keys.Control | Keys.E))
+            {
+                if (cmbFilterValue != null && cmbFilterValue.Visible && cmbFilterValue.CanFocus)
+                {
+                    cmbFilterValue.Focus();
+                    cmbFilterValue.DroppedDown = true;
+                }
+                return true;
+            }
+
+            if (keyData == Keys.Tab)
+            {
+                // If grid is locked, let the grid handle Tab for cell navigation
+                // The grid will naturally keep focus within itself
+                if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Focused)
+                {
+                    return false; // Let grid handle Tab for cell navigation
+                }
+                
+                // Normal tab navigation between dropdowns (grid lock is off)
+                if (!_isGridFocusLocked && cmbCategory != null && cmbCategory.Focused && cmbFilterValue != null && cmbFilterValue.Visible)
+                {
+                    cmbFilterValue.Focus();
+                    cmbFilterValue.DroppedDown = true;
+                    return true;
+                }
+            }
+
+            if (keyData == (Keys.Shift | Keys.Tab))
+            {
+                // If grid is locked, let the grid handle Shift+Tab for cell navigation
+                if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Focused)
+                {
+                    return false; // Let grid handle Shift+Tab for cell navigation
+                }
+            }
+
+            if (keyData == Keys.Space)
+            {
+                if (cmbCategory != null && cmbCategory.Focused && !cmbCategory.DroppedDown)
+                {
+                    cmbCategory.DroppedDown = true;
+                    return true;
+                }
+                if (cmbFilterValue != null && cmbFilterValue.Focused && !cmbFilterValue.DroppedDown)
+                {
+                    cmbFilterValue.DroppedDown = true;
+                    return true;
+                }
             }
 
             if (keyData == Keys.Enter)
@@ -91,6 +400,42 @@ namespace AssetTagPrinter
                     ApplyFilters();
                     return true;
                 }
+                if (cmbFilterValue != null && (cmbFilterValue.Focused || cmbFilterValue.DroppedDown))
+                {
+                    if (cmbFilterValue.DroppedDown)
+                    {
+                        cmbFilterValue.DroppedDown = false;
+                    }
+
+                    ApplyFilters();
+                    return true;
+                }
+            }
+
+            if (keyData == Keys.Escape)
+            {
+                // Exit grid focus lock mode if active
+                if (_isGridFocusLocked)
+                {
+                    ExitGridLockMode();
+                    return true;
+                }
+                if (cmbCategory != null && cmbCategory.DroppedDown)
+                {
+                    cmbCategory.DroppedDown = false;
+                    return true;
+                }
+                if (cmbFilterValue != null && cmbFilterValue.DroppedDown)
+                {
+                    cmbFilterValue.DroppedDown = false;
+                    return true;
+                }
+            }
+
+            if (keyData == (Keys.Control | Keys.Tab))
+            {
+                ToggleGridLockMode();
+                return true;
             }
 
             return base.ProcessCmdKey(ref msg, keyData);
@@ -142,9 +487,31 @@ namespace AssetTagPrinter
 
         private int LoadAssetsIntoGrid(string csvPath)
         {
+            // Validate file exists
+            if (!File.Exists(csvPath))
+            {
+                throw new FileNotFoundException("CSV file not found.");
+            }
+
+            // Validate file is not empty
+            var fileInfo = new FileInfo(csvPath);
+            if (fileInfo.Length == 0)
+            {
+                throw new InvalidOperationException("CSV file is empty.");
+            }
+
             var assets = _csvService.ReadAssets(csvPath).ToList();
+            
+            // Validate we loaded assets
+            if (assets.Count == 0)
+            {
+                throw new InvalidOperationException("No valid assets found in CSV file.");
+            }
+            
             _loadedAssets = assets;
-            return ApplyFilters();
+            int result = ApplyFilters();
+            UpdateButtonStates(); // Update button states after loading
+            return result;
         }
 
         private void PopulateFilterValueDropdown()
@@ -250,11 +617,20 @@ namespace AssetTagPrinter
             return _filteredAssets.Count;
         }
 
+        /// <summary>
+        /// Calculate total number of pages based on filtered assets
+        /// </summary>
+        private int CalculateTotalPages()
+        {
+            int totalPages = (_filteredAssets.Count + ItemsPerPage - 1) / ItemsPerPage; // Ceiling division
+            if (totalPages == 0) totalPages = 1;
+            return totalPages;
+        }
+
         private void DisplayCurrentPage()
         {
             // Calculate pagination
-            int totalPages = (_filteredAssets.Count + ItemsPerPage - 1) / ItemsPerPage; // Ceiling division
-            if (totalPages == 0) totalPages = 1;
+            int totalPages = CalculateTotalPages();
             if (_currentPage > totalPages) _currentPage = totalPages;
             if (_currentPage < 1) _currentPage = 1;
 
@@ -287,6 +663,9 @@ namespace AssetTagPrinter
             {
                 lblTagPreview.Text = string.Empty;
             }
+
+            // Update print/preview button states
+            UpdateButtonStates();
         }
 
         private void ConfigureGridColumns()
@@ -328,8 +707,7 @@ namespace AssetTagPrinter
 
         private void btnNextPage_Click(object? sender, EventArgs e)
         {
-            int totalPages = (_filteredAssets.Count + ItemsPerPage - 1) / ItemsPerPage;
-            if (totalPages == 0) totalPages = 1;
+            int totalPages = CalculateTotalPages();
             if (_currentPage < totalPages)
             {
                 _currentPage++;
@@ -349,31 +727,32 @@ namespace AssetTagPrinter
                 return;
             }
 
+            var assetsToPrint = GetAssetsToPrint();
+            if (assetsToPrint.Count == 0)
+            {
+                MessageBox.Show("Please select at least one asset to print. Use Space in grid mode to select.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             _isPrinting = true;
-            btnPrint.Enabled = false;
+            UpdateButtonStates();
             RefreshPrinterStatus();
 
             try
             {
-                var assetsToPrint = GetAssetsToPrint();
-                if (assetsToPrint.Count == 0)
-                {
-                    MessageBox.Show("No assets to print. Please load a CSV file first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
                 _printerService ??= new PrinterService();
                 _printerService.StyleSettings = _printStyleSettings.Clone();
                 _printerService.Open();
+                
                 for (int i = 0; i < assetsToPrint.Count; i++)
                 {
                     var asset = assetsToPrint[i];
                     _printerService.PrintAssetTag(asset);
-
                     _printerService.CutBetweenTags();
-
                     Thread.Sleep(200);
                 }
+                
+                MessageBox.Show($"Successfully printed {assetsToPrint.Count} asset(s).", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -383,6 +762,7 @@ namespace AssetTagPrinter
             {
                 _printerService?.Close();
                 _isPrinting = false;
+                UpdateButtonStates();
                 RefreshPrinterStatus();
             }
         }
@@ -391,25 +771,16 @@ namespace AssetTagPrinter
         {
             try
             {
-                var selectedAssets = new System.Collections.Generic.List<Asset>();
-
-                // Collect all assets from grid
-                foreach (DataGridViewRow row in dataGridViewAssets.Rows)
+                var assetsToPrint = GetAssetsToPrint();
+                
+                if (assetsToPrint.Count == 0)
                 {
-                    if (row.DataBoundItem is Asset asset)
-                    {
-                        selectedAssets.Add(asset);
-                    }
-                }
-
-                if (selectedAssets.Count == 0)
-                {
-                    MessageBox.Show("No assets to preview. Please load a CSV file first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Please select at least one asset to preview. Use Space in grid mode to select.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 // Show print preview form
-                PrintPreviewForm previewForm = new PrintPreviewForm(selectedAssets, _printStyleSettings);
+                PrintPreviewForm previewForm = new PrintPreviewForm(assetsToPrint, _printStyleSettings);
                 previewForm.ShowDialog();
             }
             catch (Exception ex)

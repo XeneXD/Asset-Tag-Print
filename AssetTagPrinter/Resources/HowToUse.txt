@@ -1,16 +1,24 @@
 Quick start
 1) Click "Load CSV" and select your file.
+   - File must not be empty and contain valid asset data
+   - Success message confirms number of assets loaded
 2) Click a row to see the tag preview on the right.
-3) Optional: click "Print Preview" to review tags one-by-one.
+3) Select one or more assets:
+   - Enter grid mode with Ctrl+Tab
+   - Use Space to toggle rows, Arrow keys to navigate
+   - Or use Ctrl+A to select all, then Space to deselect specific ones
 4) Click "Print Selected (or All)" to print:
-   - If a row is selected, it prints that row.
-   - If nothing is selected, it prints all rows.
+   - If rows are selected, it prints those rows
+   - Print buttons are disabled until at least one row is selected
+5) Or click "Print Preview" to review tags before printing
 
 Pagination
 - The asset list displays 12 items per page for better performance and usability.
 - Use "< Previous" and "Next >" buttons to navigate through pages.
 - Page indicator shows your current position (e.g., "Page 1 of 5").
 - When you change filters, pagination resets to page 1.
+- Pagination buttons are disabled when not applicable (Previous on page 1, Next on last page)
+- Keyboard focus intelligently switches between pagination buttons based on state
 - Pagination works well with ETD systems for batch processing large asset lists.
 - Perfect for handling large CSV files with thousands of items.
 
@@ -18,32 +26,72 @@ Filtering assets
 - Use the "Category" dropdown to choose a filter type:
   * Select "None" for no filtering (shows all assets)
   * Select "Warehouse" to filter by warehouse location
+  * Select "Acquisition Date" to filter by year acquired
 - When you select a category, a second dropdown "Filter by:" appears
-- Choose the specific value (warehouse name)
+- Choose the specific value (warehouse name or year)
 - The asset list automatically updates to show matching items
 - This progressive filtering is cleaner and more intuitive than separate dropdowns
 
 Keyboard shortcuts
 - Ctrl+O: Load CSV
-- Ctrl+P: Print selected (or all)
-- Ctrl+Shift+P: Print preview
+- Ctrl+P: Print selected (requires at least one row selected)
+- Ctrl+Shift+P: Print preview (requires at least one row selected)
 - Ctrl+D: Diagnostics
 - F1: Help / Updates
-- Ctrl+W: Focus Category filter
-- Esc: Close this Help window
+- Ctrl+W: Focus Category filter (opens dropdown)
+- Ctrl+E: Focus Filter by dropdown (opens dropdown)
+- Tab: Navigate main window controls ONLY (skips data grid)
+- Ctrl+Tab: Toggle data grid lock mode ON/OFF (title shows [GRID MODE] when locked)
+- Shift+Tab: Navigate backward through main window controls
+- Space: Toggle selection of current row (in grid mode), OR open dropdown (in main window)
+- Enter: Select item and apply filters
+- Esc: Close dropdown, or exit grid lock mode
+- Arrow keys: Navigate grid cells when in lock mode (preserves selections)
 
-CSV format (current)
+Grid lock mode - Multi-select workflow
+- Press Ctrl+Tab to enter grid lock mode (window title shows [GRID MODE])
+- Select rows using Space to toggle:
+  * Arrow Down → Space (select row)
+  * Arrow Down → Space (select next row, previous stays selected)
+  * Continue until all needed rows are selected
+  * Space toggles selection ON/OFF for the current row
+  * Arrow keys navigate without clearing selections
+- Or use these quick shortcuts:
+  * Ctrl+A: Select all rows
+  * Shift+A: Deselect all rows (clear everything)
+  * Space: Toggle current row (works after Ctrl+A to deselect specific ones)
+- After selecting rows, press Esc to exit grid mode
+- Then use Ctrl+P to print selected rows
+- Tip: The workflow is designed for keyboard-only workflow - no mouse needed!
+
+Data grid lock mode details
+- Press Ctrl+Tab to enter lock mode (window title shows [GRID MODE] indicator)
+- While locked: Tab/Shift+Tab navigate between cells (↔ columns), arrow keys navigate rows (↑ ↓)
+- Normal Tab key in main window SKIPS the grid - it's only accessible via Ctrl+Tab
+- When in grid lock: keyboard navigation is completely isolated to the grid
+- Press Ctrl+Tab again: Exit lock mode (title returns to normal)
+- Or press Esc: Exit lock mode
+- Focus automatically returns to the button you were using before entering grid mode
+- Grid lock mode requires data to be loaded (at least one row in the grid)
+- If grid is empty, Ctrl+Tab will have no effect
+- Print/Preview buttons are disabled until a selection is made
+
+CSV format
 - The app expects a header row, then data rows.
-- Header names are used when available (e.g. Ref., Label, Barcode, Default warehouse).
-- Fallback for simple files without matching headers:
-    0 = Id (must be a number)
-    1 = Ref
-    2 = Label
-    3 = Barcode (optional)
-    4 = Warehouse (optional)
+- Standard format: Id, Ref, Label, Barcode, Warehouse, AcquisitionDate
+- Acquisition dates can be in YYYY/MM format (e.g., 2024/03) or YYYY-MM or MM/DD/YYYY
+- The app displays dates as YYYY/MM (e.g., 2024/03 for March 2024)
+- Fallback for simple files: Id, Ref, Label, Barcode (optional), Warehouse (optional)
+- Error handling: If CSV is empty, app will show an error message
+- Invalid rows are skipped and valid data is loaded
 
-Tips
-- If the printer status says USB detected but not installed, install the POS/Windows driver so it appears as a printer queue or POS device.
-- If labels look cut off, reduce label text length or adjust the printer's paper/width settings.
-- Warehouse dropdown includes a "(Blank Warehouse)" option when empty warehouse values exist in the CSV.
-- Pagination handles large datasets efficiently (1000+ items) and integrates seamlessly with ETD systems.
+Tips & Robustness
+- If CSV won't load: Check that the file isn't empty and has valid data
+- Print/Preview buttons are disabled when no rows selected - select at least one first
+- If the printer status says USB detected but not installed, install the POS/Windows driver
+- If labels look cut off, reduce label text length or adjust the printer's paper/width settings
+- Warehouse dropdown includes a "(Blank Warehouse)" option when empty warehouse values exist
+- Pagination handles large datasets efficiently (1000+ items)
+- Success messages confirm how many assets were printed
+- The app validates CSV before loading - invalid files show clear error messages
+- Keyboard focus restoration ensures smooth navigation between grid and buttons
