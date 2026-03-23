@@ -7,14 +7,18 @@ namespace AssetTagPrinter
     {
         public const int PreviewInnerWidth = 20;
         public const int ReceiptWidth = 32;
+        
         private const string CompanyName = "Yoshii Software Solution Philippines";
         private const string CompanyAddress = "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City";
         private const string CompanyContact = "(032) 254-0302";
 
+        /// <summary>
+        /// Builds formatted preview text with asset details in a bordered box.
+        /// </summary>
         public static string BuildMainPreviewText(Asset asset)
         {
             string barcode = Truncate(asset.Barcode, PreviewInnerWidth);
-            string refText = $"ID: {asset.Ref}";
+            string refText = $"{asset.Ref}";
             string acquisitionDate = FormatAcquisitionDate(asset.AcquisitionDate);
             string label = string.IsNullOrWhiteSpace(asset.Label) ? string.Empty : Truncate(asset.Label, PreviewInnerWidth);
 
@@ -40,6 +44,10 @@ namespace AssetTagPrinter
             return string.Join("\r\n", lines);
         }
 
+        /// <summary>
+        /// Builds POS receipt layout lines for thermal printer output.
+        /// Supports custom receipt width with sensible minimum (24 chars).
+        /// </summary>
         public static IReadOnlyList<string> BuildPosReceiptLines(Asset asset)
         {
             return BuildPosReceiptLines(asset, ReceiptWidth);
@@ -72,6 +80,9 @@ namespace AssetTagPrinter
             return lines;
         }
 
+        /// <summary>
+        /// Truncates text to maxLength, appending ".." if needed.
+        /// </summary>
         private static string Truncate(string? text, int maxLength)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -88,6 +99,9 @@ namespace AssetTagPrinter
             return value.Substring(0, Math.Max(0, maxLength - 2)) + "..";
         }
 
+        /// <summary>
+        /// Formats acquisition date as "Acq. Date: YYYY/MM" with fallback handling for various input formats.
+        /// </summary>
         private static string FormatAcquisitionDate(string? dateString)
         {
             if (string.IsNullOrWhiteSpace(dateString))
@@ -97,28 +111,27 @@ namespace AssetTagPrinter
 
             dateString = dateString!.Trim();
 
-            // Try to parse as a date to validate and extract year/month
             if (DateTime.TryParse(dateString, out var date))
             {
                 return $"Acq. Date: {date.Year}/{date.Month:D2}";
             }
 
-            // If already in "YYYY/MM" format, validate and return
             if (System.Text.RegularExpressions.Regex.IsMatch(dateString, @"^\d{4}/\d{1,2}$"))
             {
                 return $"Acq. Date: {dateString}";
             }
 
-            // If it's just a year
             if (int.TryParse(dateString, out var year) && year >= 1900 && year <= 2100)
             {
                 return $"Acq. Date: {year}/01";
             }
 
-            // Invalid format
             return "Acq. Date: Not Recorded";
         }
 
+        /// <summary>
+        /// Pads text to width without truncation (text longer than width is returned as-is).
+        /// </summary>
         private static string Pad(string text, int width)
         {
             if (text.Length >= width)
@@ -129,6 +142,9 @@ namespace AssetTagPrinter
             return text.PadRight(width);
         }
 
+        /// <summary>
+        /// Centers text within a given width.
+        /// </summary>
         private static string Center(string text, int width)
         {
             if (text.Length >= width)
@@ -140,11 +156,15 @@ namespace AssetTagPrinter
             return (new string(' ', left) + text).PadRight(width);
         }
 
+        /// <summary>
+        /// Creates a horizontal divider line with the specified character.
+        /// </summary>
         private static string Divider(char c, int width)
         {
             return new string(c, width);
         }
 
+        // Box drawing: ┌─┐ │ └─┘ ├─┤ (used for preview panel)
         private static string BoxTop(int innerWidth)
         {
             return $"┌{new string('─', innerWidth)}┐";

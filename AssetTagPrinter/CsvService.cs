@@ -8,13 +8,9 @@ namespace AssetTagPrinter
     public class CsvService
     {
         /// <summary>
-        /// CSV Format Specification - Column indices for the required format:
-        /// Id, Ref, Label, Barcode, Warehouse (optional), AcquisitionDate (optional)
-        /// 
-        /// Example Header:
-        /// Id,Ref,Label,Barcode,Warehouse,AcquisitionDate
-        /// 
-        /// Whoever generates the CSV must follow this exact format.
+        /// Expected CSV format: Id,Ref,Label,Barcode,Warehouse,AcquisitionDate
+        /// Required columns: Id (int), Ref, Label, Barcode
+        /// Optional columns: Warehouse, AcquisitionDate
         /// </summary>
         private const int ID_IDX = 0;
         private const int REF_IDX = 1;
@@ -23,9 +19,8 @@ namespace AssetTagPrinter
         private const int WAREHOUSE_IDX = 4;
         private const int ACQDATE_IDX = 5;
 
-        private const int MIN_REQUIRED_COLUMNS = 4; // Id, Ref, Label, Barcode are required
+        private const int MIN_REQUIRED_COLUMNS = 4;
 
-        // Define the expected format for clarity
         private static readonly string[] EXPECTED_HEADERS = new[] { "Id", "Ref", "Label", "Barcode", "Warehouse", "AcquisitionDate" };
         private static readonly string EXPECTED_FORMAT = "Id,Ref,Label,Barcode,Warehouse,AcquisitionDate";
 
@@ -130,7 +125,9 @@ namespace AssetTagPrinter
             return TryGet(values, index, out var text) ? text : string.Empty;
         }
 
-        // Keeps existing behavior (no quoted-field parsing) but centralizes it for easier upgrades later.
+        /// <summary>
+        /// Simple CSV column splitter supporting basic quote handling. Centralizes logic for easier future upgrades to full CSV parsing.
+        /// </summary>
         private static string[] SplitCsvSimple(string line)
         {
             if (string.IsNullOrEmpty(line))
@@ -175,6 +172,9 @@ namespace AssetTagPrinter
             return values.ToArray();
         }
 
+        /// <summary>
+        /// Reads CSV file with automatic encoding detection (UTF-8 with fallback to Shift-JIS for legacy Japanese files).
+        /// </summary>
         private static string[] ReadAllLinesWithEncodingFallback(string filePath)
         {
             var utf8 = File.ReadAllText(filePath, new UTF8Encoding(false));

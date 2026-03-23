@@ -10,7 +10,8 @@ namespace AssetTagPrinter
         public string AcquisitionDate { get; set; } = string.Empty;
 
         /// <summary>
-        /// Formats the AcquisitionDate to display as "YYYY/MM" (e.g., "2024/04")
+        /// Formats AcquisitionDate as "YYYY/MM" (e.g., "2024/04") supporting multiple input formats.
+        /// Accepts: full dates, "YYYY, MM" format, "YYYY-MM" format, or just year.
         /// </summary>
         public string AcquisitionDateDisplay
         {
@@ -19,18 +20,15 @@ namespace AssetTagPrinter
                 if (string.IsNullOrWhiteSpace(AcquisitionDate))
                     return string.Empty;
 
-                // Try to parse as a full date
                 if (DateTime.TryParse(AcquisitionDate, out var date))
                 {
                     return date.ToString("yyyy/MM");
                 }
 
-                // If already in "YYYY, MM" or similar format, try to extract and format it
                 if (System.Text.RegularExpressions.Regex.IsMatch(AcquisitionDate, @"^\d{4}"))
                 {
                     if (int.TryParse(AcquisitionDate.Substring(0, 4), out var year))
                     {
-                        // Extract month if available (format like "2024, 05" or "2024-05")
                         var monthMatch = System.Text.RegularExpressions.Regex.Match(AcquisitionDate, @"[,\-/]\s*(\d{1,2})");
                         if (monthMatch.Success && int.TryParse(monthMatch.Groups[1].Value, out var month) && month > 0 && month <= 12)
                         {

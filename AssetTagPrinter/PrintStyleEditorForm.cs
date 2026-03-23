@@ -5,6 +5,9 @@ using System.Windows.Forms;
 
 namespace AssetTagPrinter
 {
+    /// <summary>
+    /// Dialog for customizing print styles (fonts, margins, spacing) without changing content.
+    /// </summary>
     public sealed class PrintStyleEditorForm : Form
     {
         private readonly ComboBox _cmbHeaderFamily = new ComboBox();
@@ -37,6 +40,9 @@ namespace AssetTagPrinter
 
         public PrintStyleSettings ResultSettings { get; private set; }
 
+        /// <summary>
+        /// Initializes editor with current print style settings for user customization.
+        /// </summary>
         public PrintStyleEditorForm(PrintStyleSettings currentSettings)
         {
             _workingSettings = currentSettings.Clone();

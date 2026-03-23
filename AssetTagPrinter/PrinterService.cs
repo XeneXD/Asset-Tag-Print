@@ -20,6 +20,10 @@ namespace AssetTagPrinter
 
         public PrintStyleSettings StyleSettings { get; set; } = PrintStyleSettings.CreateDefault();
 
+        /// <summary>
+        /// Finds the configured POS printer, then falls back to scanning available devices.
+        /// Filters out simulators and prioritizes Epson/TM-T88/M244A models.
+        /// </summary>
         private static DeviceInfo? FindPreferredPrinterDevice(PosExplorer explorer)
         {
             try
@@ -72,6 +76,9 @@ namespace AssetTagPrinter
             return null;
         }
 
+        /// <summary>
+        /// Tests if a POS device can be opened and claimed successfully.
+        /// </summary>
         private static bool CanOpenPosDevice(PosExplorer explorer, DeviceInfo device)
         {
             PosPrinter? probe = null;
@@ -104,6 +111,9 @@ namespace AssetTagPrinter
             }
         }
 
+        /// <summary>
+        /// Scans Windows printer queues for Epson/TM-T88 compatible devices.
+        /// </summary>
         private static string? FindPreferredWindowsPrinterName()
         {
             var printers = PrinterSettings.InstalledPrinters.Cast<string>().ToList();
@@ -121,6 +131,10 @@ namespace AssetTagPrinter
             return preferred;
         }
 
+        /// <summary>
+        /// Tests printer availability via POS device or Windows printer queue.
+        /// Returns status with device details when available.
+        /// </summary>
         public static bool TryGetPrinterStatus(out string status)
         {
             status = "Not connected";
@@ -198,6 +212,10 @@ namespace AssetTagPrinter
             }
             }
 
+        /// <summary>
+        /// Generates comprehensive diagnostics for POS/Windows printer configuration.
+        /// Lists available devices, explains configuration issues, and provides setup guidance.
+        /// </summary>
         public static string GetPrinterDiagnosticsReport()
         {
             StringBuilder sb = new StringBuilder();
@@ -292,6 +310,9 @@ namespace AssetTagPrinter
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Extracts the innermost exception message for clearer error reporting.
+        /// </summary>
         private static string GetRootMessage(Exception ex)
         {
             Exception current = ex;
@@ -303,6 +324,10 @@ namespace AssetTagPrinter
             return current.Message;
         }
 
+        /// <summary>
+        /// Initializes printer service with POS Explorer, favoring Windows printer (APD) for font rendering.
+        /// Falls back to POS logical device if available.
+        /// </summary>
         public PrinterService()
         {
             try
@@ -310,16 +335,13 @@ namespace AssetTagPrinter
                 _posExplorer = new PosExplorer();
                 _windowsPrinterName = FindPreferredWindowsPrinterName();
 
-                // Prefer Windows printer (APD) when available so GDI+ rendering and fonts work reliably.
                 if (!string.IsNullOrWhiteSpace(_windowsPrinterName))
                 {
                     _useWindowsPrinter = true;
                     return;
                 }
 
-                // Fall back to OPOS/POS logical device if no suitable Windows printer is present.
                 DeviceInfo? printerDevice = FindPreferredPrinterDevice(_posExplorer);
-
                 if (printerDevice != null)
                 {
                     _printer = (PosPrinter)_posExplorer.CreateInstance(printerDevice);
@@ -334,6 +356,9 @@ namespace AssetTagPrinter
             }
         }
 
+        /// <summary>
+        /// Opens POS printer device and claims it for exclusive use. No-op if using Windows printer.
+        /// </summary>
         public void Open()
         {
             if (_useWindowsPrinter || ShouldUseWindowsStyledRendering())

@@ -11,6 +11,9 @@ namespace AssetTagPrinter
         private readonly PrintStyleSettings _styleSettings;
         private int _currentIndex = 0;
 
+        /// <summary>
+        /// Initializes preview form with assets to preview using specified print style settings.
+        /// </summary>
         public PrintPreviewForm(List<Asset> assets, PrintStyleSettings? styleSettings = null)
         {
             InitializeComponent();
@@ -31,6 +34,10 @@ namespace AssetTagPrinter
             }
         }
 
+        /// <summary>
+        /// Renders preview bitmap for current asset with company header, barcode, and details.
+        /// Uses configured print style settings for fonts and layout.
+        /// </summary>
         private void UpdatePreview(Asset asset)
         {
             try

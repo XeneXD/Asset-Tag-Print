@@ -30,21 +30,27 @@ namespace AssetTagPrinter
             InitializeComponent();
             _csvService = new CsvService();
             _originalTitle = Text;
+            
+            // Configure data grid
             dataGridViewAssets.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewAssets.MultiSelect = true;
             dataGridViewAssets.ReadOnly = true;
             dataGridViewAssets.AllowUserToAddRows = false;
             dataGridViewAssets.AllowUserToDeleteRows = false;
             dataGridViewAssets.AllowUserToOrderColumns = false;
+            
+            // Attach event handlers
             dataGridViewAssets.CellClick += DataGridViewAssets_CellClick;
-            dataGridViewAssets.PreviewKeyDown += DataGridView_PreviewKeyDown; // Handle Ctrl+Tab in grid
-            dataGridViewAssets.KeyDown += DataGridView_KeyDown; // Backup handler for Ctrl+Tab
-            dataGridViewAssets.SelectionChanged += DataGridView_SelectionChanged; // Update button states on selection change
+            dataGridViewAssets.PreviewKeyDown += DataGridView_PreviewKeyDown;
+            dataGridViewAssets.KeyDown += DataGridView_KeyDown;
+            dataGridViewAssets.SelectionChanged += DataGridView_SelectionChanged;
             btnPreviousPage.Click += btnPreviousPage_Click;
             btnNextPage.Click += btnNextPage_Click;
+            
+            // Initialize UI state
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
-            UpdateButtonStates(); // Initialize button states
+            UpdateButtonStates();
         }
 
         /// <summary>
@@ -143,132 +149,134 @@ namespace AssetTagPrinter
 
         private void DataGridView_KeyDown(object? sender, KeyEventArgs e)
         {
-            // Backup handler: Check for Ctrl+Tab to toggle lock mode
+            // Exit grid lock mode when Ctrl+Tab is pressed
             if (e.Control && e.KeyCode == Keys.Tab && _isGridFocusLocked)
             {
-                e.Handled = true; // Prevent grid from handling it
+                e.Handled = true;
                 ExitGridLockMode();
             }
 
-            // While in grid lock mode, handle multi-select shortcuts
-            if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Rows.Count > 0)
+            // Handle multi-select shortcuts in grid lock mode
+            if (!_isGridFocusLocked || dataGridViewAssets == null || dataGridViewAssets.Rows.Count == 0)
             {
-                // Ctrl+A: Select all rows
-                if (e.Control && e.KeyCode == Keys.A)
-                {
-                    dataGridViewAssets.SelectAll();
-                    // Ensure CurrentCell is set so Space works immediately after
-                    if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
-                    {
-                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
-                    }
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    return;
-                }
+                return;
+            }
 
-                // Space: Toggle selection of current row
-                if (e.KeyCode == Keys.Space)
+            // Ctrl+A: Select all rows
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                dataGridViewAssets.SelectAll();
+                // Ensure CurrentCell is set so Space works immediately after
+                if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
                 {
-                    if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
-                    {
-                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
-                    }
+                    dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
+                }
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            // Space: Toggle selection of current row
+            if (e.KeyCode == Keys.Space)
+            {
+                if (dataGridViewAssets.CurrentCell == null && dataGridViewAssets.Rows.Count > 0)
+                {
+                    dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[0].Cells[0];
+                }
+                
+                if (dataGridViewAssets.CurrentCell != null)
+                {
+                    int rowIndex = dataGridViewAssets.CurrentCell.RowIndex;
                     
-                    if (dataGridViewAssets.CurrentCell != null)
-                    {
-                        int rowIndex = dataGridViewAssets.CurrentCell.RowIndex;
-                        
-                        // Store all currently selected rows
-                        List<int> selectedIndices = new List<int>();
-                        foreach (DataGridViewRow row in dataGridViewAssets.SelectedRows)
-                        {
-                            selectedIndices.Add(row.Index);
-                        }
-                        
-                        // Toggle the current row
-                        if (selectedIndices.Contains(rowIndex))
-                        {
-                            selectedIndices.Remove(rowIndex); // Deselect
-                        }
-                        else
-                        {
-                            selectedIndices.Add(rowIndex); // Select
-                        }
-                        
-                        // Use BeginInvoke to apply selections after the grid finishes processing
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            dataGridViewAssets.ClearSelection();
-                            foreach (int idx in selectedIndices)
-                            {
-                                if (idx >= 0 && idx < dataGridViewAssets.Rows.Count)
-                                {
-                                    dataGridViewAssets.Rows[idx].Selected = true;
-                                }
-                            }
-                        }));
-                        
-                        e.Handled = true;
-                        e.SuppressKeyPress = true;
-                        return;
-                    }
-                }
-
-                // Shift+A: Deselect all (convenience shortcut)
-                if (e.Shift && e.KeyCode == Keys.A)
-                {
-                    dataGridViewAssets.ClearSelection();
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    return;
-                }
-
-                // Arrow keys: Navigate without auto-selecting (preserve existing selections)
-                if ((e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || 
-                    e.KeyCode == Keys.Left || e.KeyCode == Keys.Right) && _isGridFocusLocked)
-                {
-                    // Store the current selection
-                    List<int> selectedRowIndices = new List<int>();
+                    // Store all currently selected rows
+                    List<int> selectedIndices = new List<int>();
                     foreach (DataGridViewRow row in dataGridViewAssets.SelectedRows)
                     {
-                        selectedRowIndices.Add(row.Index);
+                        selectedIndices.Add(row.Index);
                     }
-
-                    // Manually navigate without letting grid auto-select
-                    int currentRow = dataGridViewAssets.CurrentCell?.RowIndex ?? 0;
-                    int currentCol = dataGridViewAssets.CurrentCell?.ColumnIndex ?? 0;
                     
-                    int newRow = currentRow;
-                    int newCol = currentCol;
-                    
-                    if (e.KeyCode == Keys.Up && currentRow > 0) newRow--;
-                    if (e.KeyCode == Keys.Down && currentRow < dataGridViewAssets.Rows.Count - 1) newRow++;
-                    if (e.KeyCode == Keys.Left && currentCol > 0) newCol--;
-                    if (e.KeyCode == Keys.Right && currentCol < dataGridViewAssets.Columns.Count - 1) newCol++;
-                    
-                    // Set new current cell (this navigates without auto-selecting)
-                    if (newRow >= 0 && newRow < dataGridViewAssets.Rows.Count &&
-                        newCol >= 0 && newCol < dataGridViewAssets.Columns.Count)
+                    // Toggle the current row
+                    if (selectedIndices.Contains(rowIndex))
                     {
-                        dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[newRow].Cells[newCol];
+                        selectedIndices.Remove(rowIndex);
+                    }
+                    else
+                    {
+                        selectedIndices.Add(rowIndex);
                     }
                     
-                    // Re-select the previously selected rows after navigation
+                    // Apply selections after the grid finishes processing
                     this.BeginInvoke(new Action(() =>
                     {
                         dataGridViewAssets.ClearSelection();
-                        foreach (int rowIndex in selectedRowIndices)
+                        foreach (int idx in selectedIndices)
                         {
-                            if (rowIndex >= 0 && rowIndex < dataGridViewAssets.Rows.Count)
+                            if (idx >= 0 && idx < dataGridViewAssets.Rows.Count)
                             {
-                                dataGridViewAssets.Rows[rowIndex].Selected = true;
+                                dataGridViewAssets.Rows[idx].Selected = true;
                             }
                         }
                     }));
                     
                     e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    return;
                 }
+            }
+
+            // Shift+A: Deselect all rows
+            if (e.Shift && e.KeyCode == Keys.A)
+            {
+                dataGridViewAssets.ClearSelection();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            // Arrow keys: Navigate without auto-selecting (preserves selections)
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || 
+                e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+            {
+                // Store the current selection
+                List<int> selectedRowIndices = new List<int>();
+                foreach (DataGridViewRow row in dataGridViewAssets.SelectedRows)
+                {
+                    selectedRowIndices.Add(row.Index);
+                }
+
+                // Manually navigate without letting grid auto-select
+                int currentRow = dataGridViewAssets.CurrentCell?.RowIndex ?? 0;
+                int currentCol = dataGridViewAssets.CurrentCell?.ColumnIndex ?? 0;
+                
+                int newRow = currentRow;
+                int newCol = currentCol;
+                
+                if (e.KeyCode == Keys.Up && currentRow > 0) newRow--;
+                if (e.KeyCode == Keys.Down && currentRow < dataGridViewAssets.Rows.Count - 1) newRow++;
+                if (e.KeyCode == Keys.Left && currentCol > 0) newCol--;
+                if (e.KeyCode == Keys.Right && currentCol < dataGridViewAssets.Columns.Count - 1) newCol++;
+                
+                // Set new current cell (this navigates without auto-selecting)
+                if (newRow >= 0 && newRow < dataGridViewAssets.Rows.Count &&
+                    newCol >= 0 && newCol < dataGridViewAssets.Columns.Count)
+                {
+                    dataGridViewAssets.CurrentCell = dataGridViewAssets.Rows[newRow].Cells[newCol];
+                }
+                
+                // Re-apply selections after navigation
+                this.BeginInvoke(new Action(() =>
+                {
+                    dataGridViewAssets.ClearSelection();
+                    foreach (int rowIndex in selectedRowIndices)
+                    {
+                        if (rowIndex >= 0 && rowIndex < dataGridViewAssets.Rows.Count)
+                        {
+                            dataGridViewAssets.Rows[rowIndex].Selected = true;
+                        }
+                    }
+                }));
+                
+                e.Handled = true;
             }
         }
 
@@ -297,6 +305,7 @@ namespace AssetTagPrinter
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            // Button shortcuts: Ctrl+O (Load), Ctrl+P (Print), Ctrl+Shift+P (Preview), Ctrl+D (Diagnostics), F1 (Help)
             if (keyData == (Keys.Control | Keys.O))
             {
                 btnLoadCsv?.PerformClick();
@@ -327,6 +336,7 @@ namespace AssetTagPrinter
                 return true;
             }
 
+            // Dropdown focus shortcuts: Ctrl+W (Category), Ctrl+E (Filter)
             if (keyData == (Keys.Control | Keys.W))
             {
                 if (cmbCategory != null && cmbCategory.CanFocus)
@@ -347,17 +357,16 @@ namespace AssetTagPrinter
                 return true;
             }
 
+            // Tab navigation: Handle grid lock and dropdown navigation
             if (keyData == Keys.Tab)
             {
-                // If grid is locked, let the grid handle Tab for cell navigation
-                // The grid will naturally keep focus within itself
                 if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Focused)
                 {
-                    return false; // Let grid handle Tab for cell navigation
+                    return false;
                 }
                 
-                // Normal tab navigation between dropdowns (grid lock is off)
-                if (!_isGridFocusLocked && cmbCategory != null && cmbCategory.Focused && cmbFilterValue != null && cmbFilterValue.Visible)
+                if (!_isGridFocusLocked && cmbCategory != null && cmbCategory.Focused && 
+                    cmbFilterValue != null && cmbFilterValue.Visible)
                 {
                     cmbFilterValue.Focus();
                     cmbFilterValue.DroppedDown = true;
@@ -367,13 +376,13 @@ namespace AssetTagPrinter
 
             if (keyData == (Keys.Shift | Keys.Tab))
             {
-                // If grid is locked, let the grid handle Shift+Tab for cell navigation
                 if (_isGridFocusLocked && dataGridViewAssets != null && dataGridViewAssets.Focused)
                 {
-                    return false; // Let grid handle Shift+Tab for cell navigation
+                    return false;
                 }
             }
 
+            // Space/Enter: Dropdown interaction
             if (keyData == Keys.Space)
             {
                 if (cmbCategory != null && cmbCategory.Focused && !cmbCategory.DroppedDown)
@@ -412,9 +421,9 @@ namespace AssetTagPrinter
                 }
             }
 
+            // Escape: Close dropdowns or exit grid lock mode
             if (keyData == Keys.Escape)
             {
-                // Exit grid focus lock mode if active
                 if (_isGridFocusLocked)
                 {
                     ExitGridLockMode();
@@ -432,6 +441,7 @@ namespace AssetTagPrinter
                 }
             }
 
+            // Grid lock toggle: Ctrl+Tab enters/exits grid focus isolation
             if (keyData == (Keys.Control | Keys.Tab))
             {
                 ToggleGridLockMode();

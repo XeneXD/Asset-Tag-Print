@@ -7,7 +7,7 @@ namespace AssetTagPrinter
 {
     public class HelpUpdatesForm : Form
     {
-        // Cached help text loaded once at startup
+        // Static cache: loaded once at startup, reused for all instances
         private static string? _cachedHowToText;
         private static string? _cachedInstallationText;
         private static string? _cachedUpdateLogText;
