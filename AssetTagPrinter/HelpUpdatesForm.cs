@@ -118,7 +118,7 @@ namespace AssetTagPrinter
         {
             // Return cached value if already loaded
             if (!string.IsNullOrEmpty(cache))
-                return cache;
+                return cache!;
 
             try
             {
@@ -135,7 +135,7 @@ namespace AssetTagPrinter
                 if (File.Exists(filePath))
                 {
                     cache = File.ReadAllText(filePath);
-                    return cache;
+                    return cache!;
                 }
 
                 // Fallback message if file not found

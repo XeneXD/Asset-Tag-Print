@@ -221,8 +221,12 @@ namespace AssetTagPrinter
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("POS Device Diagnostics");
             sb.AppendLine("----------------------");
-            string posConfigPath = @"C:\ProgramData\Microsoft\Point Of Service\Configuration\Configuration.xml";
-            sb.AppendLine($"POS config file: {(System.IO.File.Exists(posConfigPath) ? "Found" : "Missing")} ({posConfigPath})");
+            string appLocal = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration.xml");
+            string programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            string pdPath = System.IO.Path.Combine(programData, "Microsoft", "Point Of Service", "Configuration", "Configuration.xml");
+            sb.AppendLine($"POS config (app local): {(System.IO.File.Exists(appLocal) ? "Found" : "Missing")} ({appLocal})");
+            sb.AppendLine($"POS config (ProgramData): {(System.IO.File.Exists(pdPath) ? "Found" : "Missing")} ({pdPath})");
+            string posConfigPath = System.IO.File.Exists(appLocal) ? appLocal : pdPath;
             sb.AppendLine();
 
             try
