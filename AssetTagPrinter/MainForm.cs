@@ -470,7 +470,7 @@ namespace AssetTagPrinter
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
                 openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
-                openFileDialog.InitialDirectory = AppContext.BaseDirectory;
+                openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
