@@ -1,13 +1,41 @@
 Installation & Setup Requirements
 
+=== IMPORTANT: See README.md for comprehensive setup guide ===
+This file provides supplementary details. For complete POS.NET and printer driver setup, 
+please refer to README.md which separates:
+- Part 1: POS.NET Framework Installation
+- Part 2: Printer Device Driver Installation
+- Supported Printer Models
+- APD (Advanced Printer Driver) Reference
+
 System Requirements
 - Windows 7 or later
 - .NET Framework 4.8 or higher (for .NET Framework builds)
 - .NET 8 (for .NET 8 builds with Windows support)
 - USB or network printer connection
 
+========================================
+POS.NET Framework (Required)
+========================================
+
+What is POS.NET?
+POS.NET is Microsoft's Point of Service framework providing standardized APIs for 
+POS peripherals (printers, scanners, displays). Essential for hardware communication.
+
+Download & Install POS.NET:
+1. Visit Microsoft Download Center or check if included in OPOS driver package
+2. Download "Microsoft Point of Service" or check OPOS driver package (may be included)
+3. Run installer and complete setup (default settings recommended)
+4. Verify installation: Settings > Apps > Search for "Point of Service"
+5. Check directory: C:\ProgramData\Microsoft\Point Of Service\Configuration\
+6. Restart computer if prompted
+
+========================================
+Printer Device Setup (Required)
+========================================
+
 OPOS and APD Driver Overview
-Asset Tag Printer uses two types of printer drivers:
+Asset Tag Printer uses two driver components:
 
 1) OPOS (Open POS) Drivers v1.14+
    - Primary interface for POS printer communication
@@ -25,61 +53,41 @@ Asset Tag Printer uses two types of printer drivers:
    - Always consult your printer's APD when configuring styles
    - APD typically available on manufacturer support pages alongside OPOS driver
 
-POS Printer Driver Installation
-Asset Tag Printer uses OPOS (Open POS) v1.14+ and optimizes for popular POS receipt printers.
-
 Supported & Preferred Printers
+(See README.md for detailed download and installation steps for each)
+
 1) Epson TM Series (RECOMMENDED)
    - Preferred Model: TM-T88 (classic, widely used)
    - Modern Versions: TM-T90X, TM-T100, TM-M30 (currently popular)
-   - Download TM Printer drivers and utilities from https://pos.epson.com/
-   - Install TM-series OPOS driver v1.14 or higher
-   - Download APD (Advanced Printer Driver documentation) for detailed capabilities
-   - APD location: Usually included in driver package or available separately on support page
-   - Check APD for: supported fonts, paper widths (58mm, 80mm, etc.), DPI settings, code pages
+   - Download: https://pos.epson.com/
+   - Install: TM series OPOS driver v1.14 or higher
+   - APD: Included in driver package or available separately on support page
 
 2) Star Micronics (RECOMMENDED)
    - Preferred Model: M244A (widely deployed)
    - Modern Versions: mPOP, SM-T11, SM-L300 (newer models, enhanced features)
-   - Download StarPRNT or StarIO OPOS drivers from https://star-m.jp/
-   - Install OPOS v1.14 or higher
-   - Download APD (Advanced Printer Driver specification) for model-specific features
-   - APD includes: font support, paper width options, thermal print quality settings, network config
-   - Reference APD when setting up custom print styles
+   - Download: https://star-m.jp/
+   - Install: StarPRNT or StarIO OPOS driver v1.14 or higher
+   - APD: Available separately from manufacturer support
 
 3) Other POS Receipt Printers
    - Zebra (Link-OS): https://www.zebra.com/
    - NCR: https://www.ncr.com/
    - Others: Check your printer manufacturer's support site
    - Ensure OPOS v1.14+ drivers are available for your model
-   - Always download the APD (Advanced Printer Driver documentation) alongside the driver
-   - APD is critical for button sizes, layout, and font rendering
+   - Always download the APD documentation alongside the driver
 
-Installation Steps
-1) Download the OPOS driver AND APD documentation from your printer manufacturer
-   - Example: Download "TM Printer Utilities" (includes OPOS and documentation)
-   - Save the APD documentation for reference during setup
-2) Run the OPOS driver installer and follow manufacturer instructions
-3) Install vendor-provided USB or network drivers for your printer
-4) Verify printer appears in Device Manager
-5) Add printer via Settings > Devices > Add a printer
-6) Consult the APD documentation to verify:
-   - Supported paper widths and sizes
-   - Available fonts and code pages
-   - DPI and resolution capabilities
-   - Special settings (thermal/dark mode, cutting, etc.)
-7) Test printing from Notepad to confirm driver installation and basic functionality
-8) Use Print Style Editor to configure label layout based on APD specs
+Installation Steps (Quick Reference)
+For detailed instructions, see README.md Part 2:
 
-APD-Specific Configuration
-When configuring the Print Style Editor:
-- Consult APD for exact paper width (58mm, 80mm, or custom)
-- Verify fonts listed in APD match those used in your labels
-- Check APD DPI setting to ensure proper resolution (typically 180 or 203 DPI for thermal)
-- Reference APD for margin and positioning recommendations
-- Some printers have APD-documented limits on text per line; check before designing labels
-- APD often includes sample code or command sets; useful for troubleshooting
-- Test with Print Preview (Ctrl+Shift+P) and verify exact rendering before bulk printing
+1) Download OPOS driver AND APD documentation from manufacturer
+2) Install USB/network drivers if needed for your connection type
+3) Run OPOS driver installer and complete setup
+4) Add printer via Settings > Devices > Printers & scanners
+5) Verify printer appears in device list
+6) Test printing from Notepad
+7) Consult APD documentation for font, paper width, and DPI settings
+8) Use Print Style Editor to configure label layout
 
 Font & Text Styling
 - Application supports TrueType fonts installed on your system
@@ -103,79 +111,35 @@ Print Style & Layout Configuration
   * Label positioning options
   * DPI and resolution settings
 
-Printer-Specific Setup
-
-Epson TM Series (Classic & Modern)
-Classic: TM-T88 (widely used, reliable)
-Modern: TM-T90X, TM-T100, TM-M30 (newer versions, better features)
-Download from: https://pos.epson.com/
-Install "TM Printer Utilities" for configuration
-Download the APD (Advanced Printer Driver) specification document
-APD Reference checklist for TM series:
-   - Default paper width: Check APD (typically 58mm or 80mm)
-   - Supported fonts: Consult APD for internal font support
-   - DPI setting: Verify in APD (usually 180 or 203 DPI)
-   - Code pages: Check APD for character set support (ASCII, Extended ASCII, etc.)
-   - Thermal print darkness: APD may have settings for print intensity
-   - Cutting/tear-off options: Reference APD for hardware features
-   - Max line width in characters: Important for layout design (APD specifies)
-- TM-series supports multiple paper widths (58mm, 80mm for most models)
-- Refer to TM APD for baud rate and COM port settings if using serial connection
-- Print Preview supports APD-based settings verification
-
-Star Micronics (Classic & Modern)
-Classic: M244A (proven, widely deployed)
-Modern: mPOP, SM-T11, SM-L300 (newer models with enhanced features)
-Download from: https://star-m.jp/
-Install StarPRNT or StarIO drivers (latest version recommended)
-Download the APD (Advanced Printer Driver specification) document
-APD Reference checklist for Star printers:
-   - Paper width options: Check APD (typically 58mm, 80mm)
-   - Font rendering: StarPRNT APD lists supported font families
-   - Resolution: Verify DPI in APD (200 DPI common for modern Star models)
-   - Connectivity: APD specifies USB, serial, and Ethernet options
-   - Print mode: Check APD for thermal or inkjet mode selection
-   - Special features: APD documents logo storage, barcode capabilities
-   - Command set: StarPRNT uses proprietary commands; APD details these
-- Modern models support improved connectivity and performance (compare via APD)
-- Reference APD for native barcode support and QR code rendering
-- Consult APD for paper sensor and auto-cutter functionality
-
-Zebra & Other Printers
-Download from manufacturer site (e.g., https://www.zebra.com/)
-Install appropriate OPOS driver (v1.14+)
-Download and review the APD documentation
-Key APD items for any POS printer:
-   - Supported paper widths and label sizes
-   - Native font list and TrueType font support
-   - DPI and print resolution capabilities
-   - Barcode symbologies supported (Code 39, Code 128, QR, etc.)
-   - Thermal vs. inkjet printing modes
-   - Paper sensor and cutting capabilities
-   - Network and serial communication settings
-- Always consult APD before configuring custom print styles
-- APD is essential for troubleshooting layout and rendering issues
+APD-Specific Configuration
+When configuring the Print Style Editor:
+- Consult APD for exact paper width (58mm, 80mm, or custom)
+- Verify fonts listed in APD match those used in your labels
+- Check APD DPI setting to ensure proper resolution (typically 180 or 203 DPI for thermal)
+- Reference APD for margin and positioning recommendations
+- Some printers have APD-documented limits on text per line; check before designing labels
+- APD often includes sample code or command sets; useful for troubleshooting
+- Test with Print Preview (Ctrl+Shift+P) and verify exact rendering before bulk printing
 
 Troubleshooting
-- If printer shows "USB detected but not installed": Install the OPOS driver from manufacturer
-- If labels print but appear cut off: Check APD for maximum line width and adjust label width in Print Style settings
-- If fonts don't render: Ensure font is installed on system; consult APD for supported fonts; verify printer supports that font family
-- If printer not detected: Ensure OPOS v1.14+ drivers are installed, not just Windows drivers; check APD for connection settings
-- If printed text is too small or too large: Check APD DPI setting and font point-size limits; adjust in Print Style Editor
-- If barcode doesn't print: Consult printer APD for supported barcode symbologies; verify barcode format is supported
-- If characters are garbled: Check APD code page settings; ensure character set matches printer's APD specification
-- If labels misalign vertically: Review APD for margin and positioning recommendations; test with Print Preview
-- Use Print Preview (Ctrl+Shift+P) to test before printing full batches and verify APD-based rendering
+See README.md for comprehensive troubleshooting guide, including:
+- POS Configuration not found errors
+- Printer not found in Windows
+- Print job failures
+- Font rendering issues
+- Barcode printing issues
 
-APD Documentation Resources
-- Epson TM Series: Included with "TM Printer Utilities" or available on https://pos.epson.com/
-- Star Micronics: Download with driver or check support page at https://star-m.jp/
-- Zebra: Available on https://www.zebra.com/ under technical documents
-- Other manufacturers: Check support/downloads section for "Advanced Printer Driver" specs
+Diagnostics
+Use Ctrl+D in Asset Tag Printer to run system diagnostics:
+- Lists available POS printers
+- Explains configuration issues
+- Provides setup guidance
+- Verifies POS.NET installation
 
-For Additional Support
-- Epson TM Support: https://pos.epson.com/ (downloads, drivers, documentation, APD)
-- Star Micronics Support: https://star-m.jp/ (drivers, APD, specifications)
-- Check your printer's user manual and APD for specific configuration
-- APD documentation is critical for resolving layout, font, and rendering issues
-- Contact your printer manufacturer for hardware or driver issues (reference APD in support request)
+Support Resources
+- Check README.md for complete setup and troubleshooting
+- Epson: https://pos.epson.com/
+- Star Micronics: https://star-m.jp/
+- Zebra: https://www.zebra.com/
+- Use Ctrl+D for application diagnostics
+- Press F1 for in-app help
