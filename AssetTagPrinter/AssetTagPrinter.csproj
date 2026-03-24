@@ -26,9 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Configuration.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
