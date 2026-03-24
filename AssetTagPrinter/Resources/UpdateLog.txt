@@ -1,6 +1,28 @@
 Update log
 
-Latest Version (1.3)
+Latest Version (1.4)
+- DOCUMENTATION: Added comprehensive README.md with separate sections for:
+  * Part 1: POS.NET Framework Installation (Microsoft Point of Service setup)
+  * Part 2: Printer Device Driver Installation (OPOS & printer-specific drivers)
+  * Supported printer models (Epson TM, Star Micronics, Zebra)
+  * APD (Advanced Printer Driver) documentation reference guide
+  * Troubleshooting guide for setup and printing issues
+- DOCUMENTATION: Updated Installation.txt to reference README and condensed for clarity
+- DOCUMENTATION: Updated HowToUse.txt with setup requirements checklist
+- CSV VALIDATION: Simplified column validation - now validates by column index only
+  * No longer checks column header names (coordinator preference)
+  * Validates minimum 4 required columns: Id, Ref, Label, Barcode
+  * Collects ALL errors and displays them together (not one at a time)
+  * Read entire CSV before reporting errors
+- CSV VALIDATION: Per-row validation for better error reporting
+  * Each row validated individually with row number in error message
+  * Ref, Label, Barcode must NOT be empty (strict required fields)
+  * Warehouse can be empty (location field, optional)
+  * AcquisitionDate can be empty OR must be valid date format
+- REMOVED: Configuration.xml file (no longer needed)
+- IMPROVED: Better error messages with specific row numbers and field names
+
+Version 1.3
 - CODE QUALITY: Comprehensive code cleanup across all source files
   * Added meaningful XML documentation (/// <summary>) to all public and key private methods
   * Improved documentation for Asset, CsvService, PrinterService, TagLayoutFormatter classes

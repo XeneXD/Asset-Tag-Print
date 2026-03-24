@@ -1,4 +1,31 @@
+BEFORE YOU START - SETUP REQUIRED
+=================================
+
+Before using Asset Tag Printer, you must:
+1. Install POS.NET Framework (Windows Point of Service)
+2. Install your POS printer's OPOS driver(s)
+3. Add your printer in Windows Settings > Devices
+
+For detailed setup instructions, see README.md which separates:
+- Part 1: POS.NET Framework Installation
+- Part 2: Printer Device Driver Installation
+
+Quick setup checklist:
+□ POS.NET installed (Settings > Apps > search "Point of Service")
+□ Printer OPOS driver installed from manufacturer
+□ Printer added in Windows (Settings > Devices > Printers)
+□ Can print from Notepad to your printer
+□ Printer diagnostics pass (Ctrl+D in this app)
+
+If you have questions about setup, consult:
+- README.md (comprehensive guide with POS.NET and device setup)
+- Installation.txt (supplementary technical details)
+- Press Ctrl+D (run diagnostics to check your configuration)
+- Press F1 (help/updates with shortcuts)
+
+=================================
 Quick start
+=================================
 1) Click "Load CSV" and select your file.
    - File must not be empty and contain valid asset data
    - Success message confirms number of assets loaded

@@ -21,9 +21,6 @@ namespace AssetTagPrinter
 
         private const int MIN_REQUIRED_COLUMNS = 4;
 
-        private static readonly string[] EXPECTED_HEADERS = new[] { "Id", "Ref", "Label", "Barcode", "Warehouse", "AcquisitionDate" };
-        private static readonly string EXPECTED_FORMAT = "Id,Ref,Label,Barcode,Warehouse,AcquisitionDate";
-
         public IEnumerable<Asset> ReadAssets(string filePath)
         {
             if (!File.Exists(filePath))
@@ -37,75 +34,113 @@ namespace AssetTagPrinter
                 yield break;
             }
 
-            // Validate header
-            var headerValues = SplitCsvSimple(allLines[0]);
-            ValidateAndReportCsvFormat(headerValues);
+            var assets = new List<Asset>();
+            var allErrors = new List<string>();
 
-            // Parse data rows using the defined column indices
-            foreach (var line in allLines.Skip(1))
+            // Skip header row and process each data row
+            for (int rowIndex = 1; rowIndex < allLines.Length; rowIndex++)
             {
+                var line = allLines[rowIndex];
+
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
 
-                var values = SplitCsvSimple(line);
-
-                // Skip rows with insufficient columns
-                if (values.Length < MIN_REQUIRED_COLUMNS)
+                var (asset, errors) = ValidateAndParseAsset(line, rowIndex);
+                
+                if (errors.Count > 0)
                 {
-                    continue;
+                    allErrors.AddRange(errors);
                 }
-
-                // Parse required Id field
-                if (!TryGet(values, ID_IDX, out var idText) || !int.TryParse(idText, out var id))
+                else if (asset != null)
                 {
-                    continue;
+                    assets.Add(asset);
                 }
+            }
 
-                yield return new Asset
-                {
-                    Id = id,
-                    Ref = GetOrEmpty(values, REF_IDX),
-                    Label = GetOrEmpty(values, LABEL_IDX),
-                    Barcode = GetOrEmpty(values, BARCODE_IDX),
-                    Warehouse = GetOrEmpty(values, WAREHOUSE_IDX),
-                    AcquisitionDate = GetOrEmpty(values, ACQDATE_IDX)
-                };
+            // If there are validation errors, throw them all at once
+            if (allErrors.Count > 0)
+            {
+                var errorMessage = "CSV contains the following errors:\r\n" + 
+                                   string.Join("\r\n", allErrors);
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            // Yield all valid assets
+            foreach (var asset in assets)
+            {
+                yield return asset;
             }
         }
 
-        private static void ValidateAndReportCsvFormat(string[] headerValues)
+        private (Asset, List<string>) ValidateAndParseAsset(string line, int rowIndex)
         {
-            if (headerValues.Length < MIN_REQUIRED_COLUMNS)
-            {
-                throw new InvalidOperationException(
-                    $"CSV header has too few columns. Need at least 4, got {headerValues.Length}.\r\n" +
-                    $"Use: {EXPECTED_FORMAT}");
-            }
-
-            // Trim headers for comparison
-            var trimmedHeaders = headerValues.Select(h => (h ?? string.Empty).Trim()).ToArray();
-
-            // Check all required columns and collect errors
-            var requiredHeaders = EXPECTED_HEADERS.Take(MIN_REQUIRED_COLUMNS).ToArray();
             var errors = new List<string>();
+            var values = SplitCsvSimple(line);
 
-            for (int i = 0; i < MIN_REQUIRED_COLUMNS; i++)
+            // Validate row has minimum required columns
+            if (values.Length < MIN_REQUIRED_COLUMNS)
             {
-                if (!trimmedHeaders[i].Equals(requiredHeaders[i], System.StringComparison.Ordinal))
-                {
-                    errors.Add($"- Column {i + 1}: Change '{trimmedHeaders[i]}' to '{requiredHeaders[i]}'");
-                }
+                errors.Add($"Row {rowIndex}: Insufficient columns (has {values.Length}, needs at least {MIN_REQUIRED_COLUMNS})");
+                return (null, errors);
             }
 
-            // If there are errors, report them all
+            // Validate and parse required Id field
+            if (!TryGet(values, ID_IDX, out var idText) || !int.TryParse(idText, out var id))
+            {
+                errors.Add($"Row {rowIndex}: Invalid or missing Id");
+                return (null, errors);
+            }
+
+            // Validate Ref (required)
+            if (!TryGet(values, REF_IDX, out var refValue) || string.IsNullOrEmpty(refValue))
+            {
+                errors.Add($"Row {rowIndex}: Ref is empty (required)");
+            }
+
+            // Validate Label (required)
+            if (!TryGet(values, LABEL_IDX, out var labelValue) || string.IsNullOrEmpty(labelValue))
+            {
+                errors.Add($"Row {rowIndex}: Label is empty (required)");
+            }
+
+            // Validate Barcode (required)
+            if (!TryGet(values, BARCODE_IDX, out var barcodeValue) || string.IsNullOrEmpty(barcodeValue))
+            {
+                errors.Add($"Row {rowIndex}: Barcode is empty (required)");
+            }
+
+            // Validate AcquisitionDate if provided (optional, but must be valid format)
+            var acqDateValue = GetOrEmpty(values, ACQDATE_IDX);
+            if (!string.IsNullOrEmpty(acqDateValue) && !IsValidDateFormat(acqDateValue))
+            {
+                errors.Add($"Row {rowIndex}: AcquisitionDate '{acqDateValue}' is not in a valid date format");
+            }
+
+            // If there are validation errors, return them
             if (errors.Count > 0)
             {
-                var errorMessage = "Fix the column names in your CSV:\r\n" + string.Join("\r\n", errors) + 
-                                   $"\r\n\r\nCorrect order: {EXPECTED_FORMAT}";
-                throw new InvalidOperationException(errorMessage);
+                return (null, errors);
             }
+
+            // All validations passed, create and return asset
+            var asset = new Asset
+            {
+                Id = id,
+                Ref = refValue,
+                Label = labelValue,
+                Barcode = barcodeValue,
+                Warehouse = GetOrEmpty(values, WAREHOUSE_IDX),
+                AcquisitionDate = acqDateValue
+            };
+
+            return (asset, errors);
+        }
+
+        private static bool IsValidDateFormat(string dateString)
+        {
+            return System.DateTime.TryParse(dateString, out _);
         }
 
         private static bool TryGet(string[] values, int index, out string text)
