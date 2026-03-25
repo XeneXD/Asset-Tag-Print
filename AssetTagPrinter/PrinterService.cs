@@ -132,6 +132,47 @@ namespace AssetTagPrinter
         }
 
         /// <summary>
+        /// Tests if a Windows printer is actually available/connected by checking its status.
+        /// </summary>
+        private static bool IsWindowsPrinterAvailable(string printerName)
+        {
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher($"SELECT PrinterStatus, PrinterState FROM Win32_Printer WHERE Name LIKE '%{printerName}%'"))
+                {
+                    var results = searcher.Get().Cast<ManagementObject>().ToList();
+                    if (results.Count == 0)
+                    {
+                        return false;
+                    }
+
+                    foreach (var printer in results)
+                    {
+                        // PrinterStatus: 1=Other, 2=Unknown, 3=Idle, 4=Printing, 5=WarmingUp, 10=Stopped
+                        // We consider Idle (3) and Printing (4) as available, others as unavailable
+                        object? statusObj = printer["PrinterStatus"];
+                        if (statusObj == null)
+                            continue;
+
+                        if (uint.TryParse(statusObj.ToString(), out uint status))
+                        {
+                            // Status 3 = Idle (ready), Status 4 = Printing (busy but working)
+                            if (status == 3 || status == 4)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Tests printer availability via POS device or Windows printer queue.
         /// Returns status with device details when available.
         /// </summary>
@@ -157,7 +198,7 @@ namespace AssetTagPrinter
                 }
 
                 string? windowsPrinter = FindPreferredWindowsPrinterName();
-                if (!string.IsNullOrWhiteSpace(windowsPrinter))
+                if (!string.IsNullOrWhiteSpace(windowsPrinter) && IsWindowsPrinterAvailable(windowsPrinter))
                 {
                     status = $"Ready (Windows: {windowsPrinter})";
                     return true;

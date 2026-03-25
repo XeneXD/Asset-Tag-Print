@@ -78,6 +78,7 @@ namespace AssetTagPrinter
             // Initialize UI state
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
+            StartPosition = FormStartPosition.CenterScreen;
             UpdateButtonStates();
         }
 
