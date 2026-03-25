@@ -7,10 +7,7 @@ namespace AssetTagPrinter
 {
     public class HelpUpdatesForm : Form
     {
-        // Static cache: loaded once at startup, reused for all instances
-        private static string? _cachedHowToText;
-        private static string? _cachedInstallationText;
-        private static string? _cachedUpdateLogText;
+        // Help texts are loaded from embedded resources
 
         public HelpUpdatesForm()
         {
@@ -41,13 +38,13 @@ namespace AssetTagPrinter
             };
 
             var tabHowTo = new TabPage("How to use");
-            tabHowTo.Controls.Add(CreateReadOnlyTextBox(LoadTextFromFile("HowToUse.txt", ref _cachedHowToText) ?? string.Empty));
+            tabHowTo.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.HowToUse ?? string.Empty));
 
             var tabInstall = new TabPage("Installation & Setup");
-            tabInstall.Controls.Add(CreateReadOnlyTextBox(LoadTextFromFile("Installation.txt", ref _cachedInstallationText) ?? string.Empty));
+            tabInstall.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.Installation ?? string.Empty));
 
             var tabUpdates = new TabPage("Update log");
-            tabUpdates.Controls.Add(CreateReadOnlyTextBox(LoadTextFromFile("UpdateLog.txt", ref _cachedUpdateLogText) ?? string.Empty));
+            tabUpdates.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.UpdateLog ?? string.Empty));
 
             tabs.TabPages.Add(tabHowTo);
             tabs.TabPages.Add(tabInstall);
@@ -111,40 +108,6 @@ namespace AssetTagPrinter
             }
         }
 
-        /// <summary>
-        /// Loads help text from external .txt files. Caches them in memory for subsequent calls.
-        /// </summary>
-        private static string LoadTextFromFile(string filename, ref string? cache)
-        {
-            // Return cached value if already loaded
-            if (!string.IsNullOrEmpty(cache))
-                return cache!;
-
-            try
-            {
-                // Try to load from Resources folder relative to executable
-                string exePath = AppDomain.CurrentDomain.BaseDirectory;
-                string filePath = Path.Combine(exePath, "Resources", filename);
-
-                if (!File.Exists(filePath))
-                {
-                    // Try relative to current directory
-                    filePath = Path.Combine("Resources", filename);
-                }
-
-                if (File.Exists(filePath))
-                {
-                    cache = File.ReadAllText(filePath);
-                    return cache!;
-                }
-
-                // Fallback message if file not found
-                return $"Error: Could not load {filename}. Please ensure the Resources folder contains {filename}.";
-            }
-            catch (Exception ex)
-            {
-                return $"Error loading {filename}: {ex.Message}";
-            }
-        }
+        // Help texts now embedded; no file I/O required.
     }
 }

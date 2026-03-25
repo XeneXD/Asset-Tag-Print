@@ -777,27 +777,48 @@ namespace AssetTagPrinter
         {
             try
             {
-                // Try to load logo from Logo folder relative to executable directory
-                string exePath = System.AppDomain.CurrentDomain.BaseDirectory;
-                string logoPath = System.IO.Path.Combine(exePath, "Logo", "one_line with background 111.png");
+                Image? logoImage = null;
 
-                if (!System.IO.File.Exists(logoPath))
+                // First try embedded resource (Resources.resx)
+                try
                 {
-                    // Try relative to current directory
-                    logoPath = System.IO.Path.Combine("Logo", "one_line with background 111.png");
+                    var res = AssetTagPrinter.Properties.Resources.OneLineWithBackground111;
+                    if (res != null)
+                    {
+                        logoImage = new Bitmap(res);
+                    }
+                }
+                catch
+                {
+                    // ignore resource load errors and fall back to file
                 }
 
-                if (System.IO.File.Exists(logoPath))
+                // Fall back to Logo folder files if embedded resource not available
+                if (logoImage == null)
                 {
-                    using (Image logoImage = Image.FromFile(logoPath))
+                    string exePath = System.AppDomain.CurrentDomain.BaseDirectory;
+                    string logoPath = System.IO.Path.Combine(exePath, "Logo", "one_line with background 111.png");
+
+                    if (!System.IO.File.Exists(logoPath))
                     {
-                        // Scale logo to fit within content width using the logo size setting
+                        logoPath = System.IO.Path.Combine("Logo", "one_line with background 111.png");
+                    }
+
+                    if (System.IO.File.Exists(logoPath))
+                    {
+                        logoImage = Image.FromFile(logoPath);
+                    }
+                }
+
+                if (logoImage != null)
+                {
+                    using (logoImage)
+                    {
                         float maxLogoWidth = width * (settings.LogoMaxWidthPercent / 100f);
                         float scale = logoImage.Width > maxLogoWidth ? maxLogoWidth / logoImage.Width : 1f;
                         int scaledWidth = (int)(logoImage.Width * scale);
                         int scaledHeight = (int)(logoImage.Height * scale);
 
-                        // Center horizontally
                         float logoX = left + Math.Max(0f, (width - scaledWidth) / 2f);
                         g.DrawImage(logoImage, logoX, y, scaledWidth, scaledHeight);
                         y += scaledHeight + 5;
@@ -805,14 +826,12 @@ namespace AssetTagPrinter
                 }
                 else
                 {
-                    // Fallback if logo not found - draw placeholder
                     g.DrawString("[Logo not found]", new Font("Arial", 8), Brushes.Gray, left, y);
                     y += 20;
                 }
             }
             catch (Exception ex)
             {
-                // If there's an error loading logo, draw error message
                 g.DrawString($"[Logo error: {ex.Message}]", new Font("Arial", 7), Brushes.Red, left, y);
                 y += 15;
             }
