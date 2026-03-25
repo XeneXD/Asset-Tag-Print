@@ -74,7 +74,7 @@ namespace AssetTagPrinter
             }
         }
 
-        private (Asset, List<string>) ValidateAndParseAsset(string line, int rowIndex)
+        private (Asset? Asset, List<string> Errors) ValidateAndParseAsset(string line, int rowIndex)
         {
             var errors = new List<string>();
             var values = SplitCsvSimple(line);
@@ -160,9 +160,6 @@ namespace AssetTagPrinter
             return TryGet(values, index, out var text) ? text : string.Empty;
         }
 
-        /// <summary>
-        /// Simple CSV column splitter supporting basic quote handling. Centralizes logic for easier future upgrades to full CSV parsing.
-        /// </summary>
         private static string[] SplitCsvSimple(string line)
         {
             if (string.IsNullOrEmpty(line))
@@ -207,9 +204,6 @@ namespace AssetTagPrinter
             return values.ToArray();
         }
 
-        /// <summary>
-        /// Reads CSV file with automatic encoding detection (UTF-8 with fallback to Shift-JIS for legacy Japanese files).
-        /// </summary>
         private static string[] ReadAllLinesWithEncodingFallback(string filePath)
         {
             var utf8 = File.ReadAllText(filePath, new UTF8Encoding(false));
