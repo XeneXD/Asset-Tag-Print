@@ -20,12 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="data.csv">
+    <Content Include="Icons\.ico Files\*.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
+    </Content>
   </ItemGroup>
 
 </Project>

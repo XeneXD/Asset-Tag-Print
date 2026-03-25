@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using AssetTagPrinter.Icons;
 
 namespace AssetTagPrinter
 {
@@ -24,10 +26,36 @@ namespace AssetTagPrinter
         private List<Asset> _filteredAssets = new List<Asset>();
         private PrintStyleSettings _printStyleSettings = PrintStyleSettings.CreateDefault();
         private int _currentPage = 1;
+        private Icon? _titleBarIcon;
+        private Icon? _taskbarIcon;
+
+        // File index map in IconManager:
+        // 0=16x16, 1=24x24, 2=32x32, 3=48x48, 4=256x256
+        private const int TitleBarIconIndex = 3;
+        private const int TaskbarIconIndex = 4;
+
+        private const int WM_SETICON = 0x0080;
+        private const int ICON_SMALL = 0;
+        private const int ICON_BIG = 1;
+        private const int GCL_HICON = -14;
+        private const int GCL_HICONSM = -34;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", EntryPoint = "SetClassLong", SetLastError = true)]
+        private static extern uint SetClassLong32(IntPtr hWnd, int nIndex, uint dwNewLong);
+
+        [DllImport("user32.dll", EntryPoint = "SetClassLongPtr", SetLastError = true)]
+        private static extern IntPtr SetClassLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
         public MainForm()
         {
             InitializeComponent();
+
+            _titleBarIcon = IconManager.LoadTitleBarIcon(TitleBarIconIndex);
+            _taskbarIcon = IconManager.LoadTaskbarIcon(TaskbarIconIndex);
+
             _csvService = new CsvService();
             _originalTitle = Text;
             
@@ -51,6 +79,53 @@ namespace AssetTagPrinter
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
             UpdateButtonStates();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            ApplyWindowIcons();
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+        }
+
+        private void ApplyWindowIcons()
+        {
+            ShowIcon = true;
+
+            if (_titleBarIcon != null)
+            {
+                Icon = (Icon)_titleBarIcon.Clone();
+            }
+            else if (_taskbarIcon != null)
+            {
+                Icon = (Icon)_taskbarIcon.Clone();
+            }
+
+            IntPtr smallHandle = _titleBarIcon != null ? _titleBarIcon.Handle : (Icon != null ? Icon.Handle : IntPtr.Zero);
+            IntPtr bigHandle = _taskbarIcon != null ? _taskbarIcon.Handle : smallHandle;
+
+            SendMessage(Handle, WM_SETICON, (IntPtr)ICON_SMALL, smallHandle);
+            SendMessage(Handle, WM_SETICON, (IntPtr)ICON_BIG, bigHandle);
+
+            // Set class icons as well so Windows shell picks up both title bar and taskbar icons.
+            SetClassIcon(Handle, GCL_HICONSM, smallHandle);
+            SetClassIcon(Handle, GCL_HICON, bigHandle);
+        }
+
+        private static void SetClassIcon(IntPtr hWnd, int index, IntPtr iconHandle)
+        {
+            if (IntPtr.Size == 8)
+            {
+                SetClassLongPtr64(hWnd, index, iconHandle);
+            }
+            else
+            {
+                SetClassLong32(hWnd, index, (uint)iconHandle.ToInt32());
+            }
         }
 
         /// <summary>
