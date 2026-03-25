@@ -9,6 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.4.0</Version>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,15 +18,18 @@
     </Reference>
     <Reference Include="System.Management" />
     <PackageReference Include="ZXing.Net" Version="0.16.9" />
+    <PackageReference Include="System.Resources.Extensions" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="data.csv">
+    <Content Include="Icons\.ico Files\*.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
-
   <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
-
 </Project>
