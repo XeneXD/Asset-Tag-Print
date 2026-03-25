@@ -7,8 +7,6 @@ namespace AssetTagPrinter
 {
     public class HelpUpdatesForm : Form
     {
-        // Help texts are loaded from embedded resources
-
         public HelpUpdatesForm()
         {
             Text = "Help / Updates";
