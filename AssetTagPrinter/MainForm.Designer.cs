@@ -238,6 +238,9 @@ namespace AssetTagPrinter
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MinimizeBox = false;
+            this.MaximizeBox = false;
             this.Controls.Add(this.cmbFilterValue);
             this.Controls.Add(this.lblFilterValue);
             this.Controls.Add(this.cmbCategory);
