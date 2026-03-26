@@ -4,41 +4,37 @@
     <value>text/microsoft-resx</value>
   </resheader>
   <resheader name="version">
-    <data name="HowToUse" type="System.Resources.ResXFileRef, System.Windows.Forms">
-      <value>HowToUse.txt;System.String,mscorlib</value>
-    </data>
-  * Space: Toggle current row (works after Ctrl+A to deselect specific ones)
-- After selecting rows, press Esc to exit grid mode
-    <data name="Installation" type="System.Resources.ResXFileRef, System.Windows.Forms">
-     <value>Installation.txt;System.String,mscorlib</value>
-    </data>
-  - Some printers have APD-documented limits on text per line; check before designing labels
-  - APD often includes sample code or command sets; useful for troubleshooting
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
 
-  Troubleshooting
-  See README.md for comprehensive troubleshooting guide, including:
-  - POS Configuration not found errors
-  - Printer not found in Windows
-  - Print job failures
-  - Font rendering issues
-  - Barcode printing issues
+  <data name="BlackAndWhite" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Logo\black and white.jpg;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
 
-  Diagnostics
-  Use Ctrl+D in Asset Tag Printer to run system diagnostics:
-  - Lists available POS printers
-  - Explains configuration issues
-  - Provides setup guidance
-  - Verifies POS.NET installation
+  <data name="OneLineWithBackground111" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Logo\one_line with background 111.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
 
-  Support Resources
-  - Check README.md for complete setup and troubleshooting
-  - Epson: https://pos.epson.com/ or https://epson.com/Support/Point-of-Sale/Thermal-Printers/Epson-TM-T88V-Series/s/SPT_C31CA85011
-  - Use Ctrl+D for application diagnostics
-  - Press F1 for in-app help</value>
-    </data>
+  <data name="OneLineWithBackground" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Logo\one_line with background.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
 
-  <data name="UpdateLog" xml:space="preserve" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>UpdateLog.txt;System.String,mscorlib</value>
-    </data>
+  <data name="HowToUse" type="System.Resources.ResXFileRef, System.Windows.Forms" xml:space="preserve">
+    <value>HowToUse.txt;System.String</value>
+  </data>
+
+  <data name="Installation" type="System.Resources.ResXFileRef, System.Windows.Forms" xml:space="preserve">
+    <value>Installation.txt;System.String</value>
+  </data>
+
+  <data name="UpdateLog" type="System.Resources.ResXFileRef, System.Windows.Forms" xml:space="preserve">
+    <value>UpdateLog.txt;System.String</value>
+  </data>
 
 </root>

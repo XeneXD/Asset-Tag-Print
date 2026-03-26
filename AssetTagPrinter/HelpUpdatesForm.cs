@@ -36,13 +36,13 @@ namespace AssetTagPrinter
             };
 
             var tabHowTo = new TabPage("How to use");
-            tabHowTo.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.HowToUse ?? string.Empty));
+            tabHowTo.Controls.Add(CreateReadOnlyTextBox(LoadHelpText("HowToUse.txt", "HowToUse")));
 
             var tabInstall = new TabPage("Installation & Setup");
-            tabInstall.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.Installation ?? string.Empty));
+            tabInstall.Controls.Add(CreateReadOnlyTextBox(LoadHelpText("Installation.txt", "Installation")));
 
             var tabUpdates = new TabPage("Update log");
-            tabUpdates.Controls.Add(CreateReadOnlyTextBox(Properties.Resources.UpdateLog ?? string.Empty));
+            tabUpdates.Controls.Add(CreateReadOnlyTextBox(LoadHelpText("UpdateLog.txt", "UpdateLog")));
 
             tabs.TabPages.Add(tabHowTo);
             tabs.TabPages.Add(tabInstall);
@@ -85,6 +85,41 @@ namespace AssetTagPrinter
                 BackColor = SystemColors.Window,
                 Text = text
             };
+        }
+
+        private static string LoadHelpText(string filename, string fallbackResourceKey)
+        {
+            try
+            {
+                string exeDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
+                string candidate = Path.Combine(exeDir, "Properties", filename);
+                if (File.Exists(candidate))
+                {
+                    return File.ReadAllText(candidate);
+                }
+
+                // Also try relative to current working directory
+                candidate = Path.Combine(Environment.CurrentDirectory, "Properties", filename);
+                if (File.Exists(candidate))
+                {
+                    return File.ReadAllText(candidate);
+                }
+            }
+            catch
+            {
+                // Ignore and fall back to embedded resource
+            }
+
+            try
+            {
+                var rm = Properties.Resources.ResourceManager;
+                var s = rm.GetString(fallbackResourceKey);
+                return s ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         private static string GetAppVersion()
