@@ -72,9 +72,10 @@ namespace AssetTagPrinter
             dataGridViewAssets.PreviewKeyDown += DataGridView_PreviewKeyDown;
             dataGridViewAssets.KeyDown += DataGridView_KeyDown;
             dataGridViewAssets.SelectionChanged += DataGridView_SelectionChanged;
-            btnPreviousPage.Click += btnPreviousPage_Click;
-            btnNextPage.Click += btnNextPage_Click;
-            
+
+            // Pagination Issue removed here (2 Lines)
+            // Pagination Button Clicker handlers were called here and inside the designer file
+
             // Initialize UI state
             cmbCategory.SelectedIndex = 0;
             KeyPreview = true;
