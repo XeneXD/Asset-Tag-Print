@@ -1,6 +1,19 @@
 Update log
 
-Latest Version (1.4)
+Latest Version (1.5)
+- UI/UX: Window management improvements
+  * FormBorderStyle set to FixedDialog - prevents window edge resizing
+  * Fixed window size to 800×450 for consistent layout and display
+  * Disabled MinimizeBox and MaximizeBox - only close button (X) visible
+  * Prevents empty whitespace and unwanted window manipulation
+  * Can still be moved/dragged by title bar, just not resized
+- BUGFIX: Pagination issue fix
+  * Removed duplicate event handler assignments for pagination buttons
+  * btnPreviousPage.Click and btnNextPage.Click were assigned in both MainForm constructor and Designer
+  * Prevents double-registration of click events that could cause pagaination to skip or behave erratically
+  * Button handlers now exclusively managed by Designer.cs (single source of truth)
+
+Version 1.4
 - DOCUMENTATION: Added comprehensive README.md with separate sections for:
   * Part 1: POS.NET Framework Installation (Microsoft Point of Service setup)
   * Part 2: Printer Device Driver Installation (OPOS & printer-specific drivers)

@@ -56,10 +56,6 @@ namespace AssetTagPrinter
                         yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
                     }
 
-                    yPos = DrawCenteredLine(g, "Yoshii Software Solution Philippines", headerFont, _styleSettings.LeftMargin, contentWidth, yPos, 9f, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawCenteredLine(g, "602-B Metrobank Plaza Bldg., Osmena Blvd Cebu City", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 7f, _styleSettings.ExtraLineSpacing);
-                    yPos = DrawCenteredLine(g, "(032) 254-0302", secondaryFont, _styleSettings.LeftMargin, contentWidth, yPos, 7f, _styleSettings.ExtraLineSpacing);
-
                     yPos += 4;
 
                     int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
