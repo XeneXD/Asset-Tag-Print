@@ -1,6 +1,15 @@
 Update log
 
-Latest Version (1.5)
+Latest Version (1.6.0)
+- RELEASE: 1.6.0
+- UI/UX: Help/Updates window refreshed — shows entries since 1.4.0, adds a version selector, searchable changelog, and a "What's New" highlight for the latest release.
+- FEATURES: Added Export Preview (PNG) and improved print-preview scaling to better match printers with narrow paper widths.
+- CSV VALIDATION: Better error aggregation for malformed rows; clearer messages with row numbers.
+- BUGFIX: Continued pagination stability fixes and removed duplicate event handler registrations; fixed a rare focus-loss issue when exiting Grid Lock Mode.
+- DOCUMENTATION: Updated README, Installation.txt, and HowToUse.txt to reference new preview/export features and updated POS.NET setup notes.
+- NOTES: Non-breaking update — no user settings migration required. Recommend updating the Help/Updates window contents to include this entry and a short "upgrade tips" block.
+
+Version 1.5
 - UI/UX: Window management improvements
   * FormBorderStyle set to FixedDialog - prevents window edge resizing
   * Fixed window size to 800×450 for consistent layout and display
