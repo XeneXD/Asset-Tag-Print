@@ -13,7 +13,7 @@ namespace AssetTagPrinter
     public partial class MainForm : Form
     {
         private const string BlankWarehouseOption = "(Blank Warehouse)";
-        private const int ItemsPerPage = 12;
+        private const int ItemsPerPage = 15;
         private const string GRID_LOCK_TITLE_SUFFIX = " [GRID MODE]";
         
         private PrinterService? _printerService;
@@ -28,6 +28,10 @@ namespace AssetTagPrinter
         private int _currentPage = 1;
         private Icon? _titleBarIcon;
         private Icon? _taskbarIcon;
+
+        // Preview state
+        private List<Asset> _previewAssets = new List<Asset>();
+        private int _currentPreviewIndex = 0;
 
         // File index map in IconManager:
         // 0=16x16, 1=24x24, 2=32x32, 3=48x48, 4=256x256
@@ -206,9 +210,8 @@ namespace AssetTagPrinter
             bool hasAssets = dataGridViewAssets.Rows.Count > 0;
             bool hasSelection = dataGridViewAssets.SelectedRows.Count > 0;
 
-            // Print and Preview require assets and selection
+            // Print requires assets and selection
             btnPrint.Enabled = hasAssets && hasSelection && !_isPrinting;
-            btnPrintPreview.Enabled = hasAssets && hasSelection;
             btnPrintStyle.Enabled = hasAssets;
             
             // Pagination buttons
@@ -222,6 +225,7 @@ namespace AssetTagPrinter
         private void DataGridView_SelectionChanged(object? sender, EventArgs e)
         {
             UpdateButtonStates();
+            RefreshPreviewForSelection();
         }
 
         private void DataGridView_KeyDown(object? sender, KeyEventArgs e)
@@ -395,12 +399,6 @@ namespace AssetTagPrinter
                 return true;
             }
 
-            if (keyData == (Keys.Control | Keys.Shift | Keys.P))
-            {
-                btnPrintPreview?.PerformClick();
-                return true;
-            }
-
             if (keyData == (Keys.Control | Keys.D))
             {
                 btnDiagnostics?.PerformClick();
@@ -566,10 +564,7 @@ namespace AssetTagPrinter
 
         private void DataGridViewAssets_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0 && dataGridViewAssets.Rows[e.RowIndex].DataBoundItem is Asset asset)
-            {
-                UpdatePreviewPanel(asset);
-            }
+            // Preview is now updated automatically via SelectionChanged event
         }
 
         private int LoadAssetsIntoGrid(string csvPath)
@@ -744,11 +739,11 @@ namespace AssetTagPrinter
             {
                 dataGridViewAssets.ClearSelection();
                 dataGridViewAssets.Rows[0].Selected = true;
-                UpdatePreviewPanel(pageList[0]);
+                // Selection change will trigger RefreshPreviewForSelection
             }
             else
             {
-                lblTagPreview.Text = string.Empty;
+                RefreshPreviewForSelection();
             }
 
             // Update print/preview button states
@@ -802,11 +797,6 @@ namespace AssetTagPrinter
             }
         }
 
-        private void UpdatePreviewPanel(Asset asset)
-        {
-            lblTagPreview.Text = TagLayoutFormatter.BuildMainPreviewText(asset);
-        }
-
         private void btnPrint_Click(object sender, EventArgs e)
         {
             if (_isPrinting)
@@ -854,44 +844,6 @@ namespace AssetTagPrinter
             }
         }
 
-        private void btnPrintPreview_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                var assetsToPrint = GetAssetsToPrint();
-                
-                if (assetsToPrint.Count == 0)
-                {
-                    MessageBox.Show("Please select at least one asset to preview. Use Space in grid mode to select.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Show print preview form
-                PrintPreviewForm previewForm = new PrintPreviewForm(assetsToPrint, _printStyleSettings);
-                previewForm.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error generating preview: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnPrintStyle_Click(object sender, EventArgs e)
-        {
-            using (var styleEditor = new PrintStyleEditorForm(_printStyleSettings))
-            {
-                if (styleEditor.ShowDialog(this) == DialogResult.OK)
-                {
-                    _printStyleSettings = styleEditor.ResultSettings.Clone();
-                    MessageBox.Show(
-                        "Print style updated. Open Print Preview to verify before printing.",
-                        "Print Style",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
-            }
-        }
-
         private List<Asset> GetAssetsToPrint()
         {
             var selectedAssets = dataGridViewAssets.SelectedRows
@@ -926,6 +878,227 @@ namespace AssetTagPrinter
             using (var help = new HelpUpdatesForm())
             {
                 help.ShowDialog(this);
+            }
+        }
+
+        // Preview functionality
+        private void RefreshPreviewForSelection()
+        {
+            try
+            {
+                var selectedAssets = GetAssetsToPrint();
+                
+                if (selectedAssets.Count == 0)
+                {
+                    _previewAssets.Clear();
+                    _currentPreviewIndex = 0;
+                    picBoxTagPreview.Image = null;
+                    lblPreviewStatus.Text = "No selection";
+                    btnPreviewPrevious.Enabled = false;
+                    btnPreviewNext.Enabled = false;
+                    return;
+                }
+
+                _previewAssets = selectedAssets;
+                _currentPreviewIndex = 0;
+                UpdatePreview();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating preview: {ex.Message}", "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void UpdatePreview()
+        {
+            if (_previewAssets.Count == 0)
+            {
+                picBoxTagPreview.Image = null;
+                lblPreviewStatus.Text = "No selection";
+                btnPreviewPrevious.Enabled = false;
+                btnPreviewNext.Enabled = false;
+                return;
+            }
+
+            // Clamp index to valid range
+            if (_currentPreviewIndex >= _previewAssets.Count)
+            {
+                _currentPreviewIndex = _previewAssets.Count - 1;
+            }
+            if (_currentPreviewIndex < 0)
+            {
+                _currentPreviewIndex = 0;
+            }
+
+            var asset = _previewAssets[_currentPreviewIndex];
+            
+            try
+            {
+                Bitmap previewBitmap = new Bitmap(280, 400);
+                using (Graphics g = Graphics.FromImage(previewBitmap))
+                {
+                    g.Clear(Color.White);
+                    g.DrawRectangle(Pens.Black, 0, 0, 279, 399);
+
+                    Brush blackBrush = Brushes.Black;
+                    var lines = TagLayoutFormatter.BuildPosReceiptLines(asset);
+                    using Font headerFont = _printStyleSettings.Header.CreateFont();
+                    using Font secondaryFont = _printStyleSettings.Secondary.CreateFont();
+                    using Font bodyFont = _printStyleSettings.Body.CreateFont();
+
+                    float yPos = _printStyleSettings.TopMargin;
+                    float contentWidth = Math.Max(120f, previewBitmap.Width - (_printStyleSettings.LeftMargin * 2));
+
+                    // Draw logo at the top
+                    yPos = DrawLogoInPreview(g, _printStyleSettings, _printStyleSettings.LeftMargin, contentWidth, yPos);
+
+                    int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
+                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
+                    {
+                        if (barcode != null)
+                        {
+                            float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
+                            g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
+                            yPos += barcode.Height + 2;
+                            // Draw barcode value text below the barcode, centered
+                            float textWidth = g.MeasureString(asset.Barcode, bodyFont).Width;
+                            float textX = _printStyleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                            g.DrawString(asset.Barcode, bodyFont, blackBrush, textX, yPos);
+                            yPos += bodyFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
+                        }
+                        else
+                        {
+                            g.DrawString("(Barcode unavailable)", secondaryFont, blackBrush, _printStyleSettings.LeftMargin, yPos);
+                            yPos += secondaryFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing + 4;
+                        }
+                    }
+
+                    for (int i = 4; i < lines.Count; i++)
+                    {
+                        Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
+                        g.DrawString(lines[i], lineFont, blackBrush, _printStyleSettings.LeftMargin, yPos);
+                        yPos += lineFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
+                    }
+
+                    // Draw cut line (dashed)
+                    Pen dashedPen = new Pen(Color.Red) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
+                    g.DrawLine(dashedPen, 0, 390, 280, 390);
+                    g.DrawString("CUT", new Font("Arial", 6), Brushes.Red, 260, 392);
+                }
+
+                // Dispose old image if exists
+                if (picBoxTagPreview.Image != null)
+                {
+                    picBoxTagPreview.Image.Dispose();
+                }
+                
+                picBoxTagPreview.Image = previewBitmap;
+                lblPreviewStatus.Text = $"Preview {_currentPreviewIndex + 1} of {_previewAssets.Count}";
+                btnPreviewPrevious.Enabled = _currentPreviewIndex > 0;
+                btnPreviewNext.Enabled = _currentPreviewIndex < _previewAssets.Count - 1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating preview: {ex.Message}", "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private static Font GetLineFont(int lineIndex, Font headerFont, Font secondaryFont, Font bodyFont)
+        {
+            if (lineIndex == 1)
+            {
+                return headerFont;
+            }
+
+            if (lineIndex == 2 || lineIndex == 3)
+            {
+                return secondaryFont;
+            }
+
+            return bodyFont;
+        }
+
+        private static float DrawLogoInPreview(Graphics g, PrintStyleSettings settings, float left, float width, float y)
+        {
+            try
+            {
+                Image? logoImage = null;
+
+                // First try embedded resource (Resources.resx)
+                try
+                {
+                    var res = AssetTagPrinter.Properties.Resources.OneLineWithBackground111;
+                    if (res != null)
+                    {
+                        logoImage = new Bitmap(res);
+                    }
+                }
+                catch
+                {
+                    // ignore resource load errors and fall back to file
+                }
+
+                // Fall back to Logo folder files if embedded resource not available
+                if (logoImage == null)
+                {
+                    string exePath = System.AppDomain.CurrentDomain.BaseDirectory;
+                    string logoPath = System.IO.Path.Combine(exePath, "Logo", "one_line with background 111.png");
+
+                    if (!System.IO.File.Exists(logoPath))
+                    {
+                        logoPath = System.IO.Path.Combine("Logo", "one_line with background 111.png");
+                    }
+
+                    if (System.IO.File.Exists(logoPath))
+                    {
+                        logoImage = Image.FromFile(logoPath);
+                    }
+                }
+
+                if (logoImage != null)
+                {
+                    using (logoImage)
+                    {
+                        float maxLogoWidth = width * (settings.LogoMaxWidthPercent / 100f);
+                        float scale = logoImage.Width > maxLogoWidth ? maxLogoWidth / logoImage.Width : 1f;
+                        int scaledWidth = (int)(logoImage.Width * scale);
+                        int scaledHeight = (int)(logoImage.Height * scale);
+
+                        float logoX = left + Math.Max(0f, (width - scaledWidth) / 2f);
+                        g.DrawImage(logoImage, logoX, y, scaledWidth, scaledHeight);
+                        y += scaledHeight + 5;
+                    }
+                }
+                else
+                {
+                    g.DrawString("[Logo not found]", new Font("Arial", 8), Brushes.Gray, left, y);
+                    y += 20;
+                }
+            }
+            catch (Exception ex)
+            {
+                g.DrawString($"[Logo error: {ex.Message}]", new Font("Arial", 7), Brushes.Red, left, y);
+                y += 15;
+            }
+
+            return y;
+        }
+
+        private void btnPreviewPrevious_Click(object? sender, EventArgs e)
+        {
+            if (_currentPreviewIndex > 0)
+            {
+                _currentPreviewIndex--;
+                UpdatePreview();
+            }
+        }
+
+        private void btnPreviewNext_Click(object? sender, EventArgs e)
+        {
+            if (_currentPreviewIndex < _previewAssets.Count - 1)
+            {
+                _currentPreviewIndex++;
+                UpdatePreview();
             }
         }
 
