@@ -106,7 +106,7 @@ namespace AssetTagPrinter
         {
             if (string.IsNullOrWhiteSpace(dateString))
             {
-                return "Acq. Date: Not Recorded";
+                return "Acq. Date: ";
             }
 
             dateString = dateString!.Trim();
@@ -126,7 +126,7 @@ namespace AssetTagPrinter
                 return $"Acq. Date: {year}/01";
             }
 
-            return "Acq. Date: Not Recorded";
+            return "Acq. Date: ";
         }
 
         /// <summary>
