@@ -59,18 +59,25 @@ namespace AssetTagPrinter
                     yPos += 4;
 
                     int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
-                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
+                    // Make QR smaller to conserve sticker paper (about 50% of the available barcode width)
+                    int qrSize = Math.Max(64, (int)(barcodeWidth * 0.5f));
+                    using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(asset.Barcode, qrSize))
                     {
                         if (barcode != null)
                         {
                             float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
-                            g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
-                            yPos += barcode.Height + 2;
-                            // Draw barcode value text below the barcode, centered
-                            float textWidth = g.MeasureString(asset.Barcode, bodyFont).Width;
-                            float textX = _styleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
-                            g.DrawString(asset.Barcode, bodyFont, blackBrush, textX, yPos);
-                            yPos += bodyFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
+                            // Slightly shift up to use top leeway and reduce vertical gaps
+                            float drawY = Math.Max(0f, yPos - 2f);
+                            g.DrawImage(barcode, barcodeX, drawY, barcode.Width, barcode.Height);
+                            yPos = drawY + barcode.Height + 1; // smaller gap after QR
+                            // Draw barcode value text below the QR using a slightly smaller font to save space
+                            using (Font smallBarcodeFont = new Font(bodyFont.FontFamily, Math.Max(6f, bodyFont.Size * 0.85f), bodyFont.Style))
+                            {
+                                float textWidth = g.MeasureString(asset.Barcode, smallBarcodeFont).Width;
+                                float textX = _styleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                                g.DrawString(asset.Barcode, smallBarcodeFont, blackBrush, textX, yPos);
+                                yPos += smallBarcodeFont.GetHeight(g) + _styleSettings.ExtraLineSpacing;
+                            }
                         }
                         else
                         {

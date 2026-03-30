@@ -2,6 +2,8 @@ using System;
 using System.Drawing;
 using ZXing;
 using ZXing.Common;
+using ZXing.QrCode;
+using ZXing.QrCode.Internal;
 
 namespace AssetTagPrinter
 {
@@ -26,6 +28,36 @@ namespace AssetTagPrinter
                         Height = Math.Max(40, height),
                         Margin = 2,
                         PureBarcode = true
+                    }
+                };
+
+                return writer.Write(data);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static Bitmap? CreateQrBitmap(string? value, int size)
+        {
+            string data = value ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(data))
+            {
+                return null;
+            }
+
+            try
+            {
+                var writer = new BarcodeWriter
+                {
+                    Format = BarcodeFormat.QR_CODE,
+                    Options = new QrCodeEncodingOptions
+                    {
+                        Width = Math.Max(40, size),
+                        Height = Math.Max(40, size),
+                        Margin = 1,
+                        ErrorCorrection = ErrorCorrectionLevel.L
                     }
                 };
 

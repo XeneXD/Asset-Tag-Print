@@ -10,7 +10,7 @@ namespace AssetTagPrinter
 {
     public class PrinterService
     {
-        private const int FeedLinesBeforeBetweenTagCut = 4;
+        private const int FeedLinesBeforeBetweenTagCut = 0;
         private const int BetweenTagCutPercentage = 25;
 
         private PosPrinter? _printer;
@@ -598,7 +598,8 @@ namespace AssetTagPrinter
                     if (!string.IsNullOrWhiteSpace(labelText)) blocks.Add(labelText);
 
                     float contentWidth = Math.Max(120f, bitmapWidth - 16f);
-                    float totalHeight = 6f; // small top padding
+                    // Minimize top padding to reduce extra whitespace at the top of printed bitmap
+                    float totalHeight = 0f;
 
                     for (int i = 0; i < blocks.Count; i++)
                     {
@@ -612,14 +613,15 @@ namespace AssetTagPrinter
                         }
                     }
 
-                    int bmpHeight = Math.Max(48, (int)Math.Ceiling(totalHeight) + 6);
+                    int bmpHeight = Math.Max(48, (int)Math.Ceiling(totalHeight) + 2);
                     var bmp = new Bitmap(bitmapWidth, bmpHeight);
                     using (var gfx = Graphics.FromImage(bmp))
                     {
                         gfx.Clear(Color.White);
                         gfx.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-                        float y = 2f;
+                        // Start drawing at the very top of the bitmap to avoid added whitespace
+                        float y = 0f;
                         var sf = new StringFormat(StringFormat.GenericDefault)
                         {
                             Alignment = StringAlignment.Center,
@@ -759,19 +761,25 @@ namespace AssetTagPrinter
 
                         y += 4;
                         int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
-                        using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(barcodeValue, barcodeWidth, 65))
+                        // Reduce QR size to save paper (about 50% of the computed width)
+                        int qrSize = Math.Max(64, (int)(barcodeWidth * 0.5f));
+                        using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(barcodeValue, qrSize))
                         {
                             if (barcode != null)
                             {
                                 // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
                                 float x = settings.LeftMargin + Math.Max(0f, (contentWidth - barcode.Width) / 2f);
-                                e.Graphics.DrawImageUnscaled(barcode, (int)x, (int)y);
-                                y += barcode.Height + 2;
-                                // Draw barcode value text below the barcode, centered
-                                float textWidth = e.Graphics.MeasureString(barcodeValue, body).Width;
-                                float textX = settings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
-                                e.Graphics.DrawString(barcodeValue, body, Brushes.Black, textX, y);
-                                y += body.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
+                                int drawY = Math.Max(0, (int)(y - 2f));
+                                e.Graphics.DrawImageUnscaled(barcode, (int)x, drawY);
+                                y = drawY + barcode.Height + 1;
+                                // Draw barcode value text below the QR using a slightly smaller font to save space
+                                using (Font smallBarcodeFont = new Font(body.FontFamily, Math.Max(6f, body.Size * 0.85f), body.Style))
+                                {
+                                    float textWidth = e.Graphics.MeasureString(barcodeValue, smallBarcodeFont).Width;
+                                    float textX = settings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                                    e.Graphics.DrawString(barcodeValue, smallBarcodeFont, Brushes.Black, textX, y);
+                                    y += smallBarcodeFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
+                                }
                             }
                             else
                             {
@@ -867,8 +875,9 @@ namespace AssetTagPrinter
                 }
                 else
                 {
-                    g.DrawString("[Logo not found]", new Font("Arial", 8), Brushes.Gray, left, y);
-                    y += 20;
+                    // Do not reserve large space when logo is missing for printed output.
+                    // Leave `y` unchanged so content starts near the configured TopMargin.
+                    // This avoids unnecessary whitespace on receipts when no logo is available.
                 }
             }
             catch (Exception ex)

@@ -33,6 +33,9 @@ namespace AssetTagPrinter
         private List<Asset> _previewAssets = new List<Asset>();
         private int _currentPreviewIndex = 0;
 
+        // Timer for polling printer status in the background
+        private System.Windows.Forms.Timer? _printerStatusTimer;
+
         // File index map in IconManager:
         // 0=16x16, 1=24x24, 2=32x32, 3=48x48, 4=256x256
         private const int TitleBarIconIndex = 3;
@@ -85,6 +88,35 @@ namespace AssetTagPrinter
             KeyPreview = true;
             StartPosition = FormStartPosition.CenterScreen;
             UpdateButtonStates();
+
+            // Start background printer status polling (non-blocking)
+            _printerStatusTimer = new System.Windows.Forms.Timer();
+            _printerStatusTimer.Interval = 5000; // poll every 5 seconds
+            _printerStatusTimer.Tick += (s, e) =>
+            {
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    bool ready = PrinterService.TryGetPrinterStatus(out string status);
+                    try
+                    {
+                        if (!IsDisposed)
+                        {
+                            BeginInvoke(new Action(() =>
+                            {
+                                lblPrinterStatus.Text = $"Printer: {status}";
+                                lblPrinterStatus.ForeColor = ready ? Color.DarkGreen : Color.DarkRed;
+                            }));
+                        }
+                    }
+                    catch
+                    {
+                        // ignore invoke errors during shutdown
+                    }
+                });
+            };
+            _printerStatusTimer.Start();
+
+            this.FormClosing += MainForm_FormClosing;
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -531,6 +563,20 @@ namespace AssetTagPrinter
             RefreshPrinterStatus();
         }
 
+        private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (_printerStatusTimer != null)
+                {
+                    _printerStatusTimer.Stop();
+                    _printerStatusTimer.Dispose();
+                    _printerStatusTimer = null;
+                }
+            }
+            catch { }
+        }
+
         private void RefreshPrinterStatus()
         {
             bool ready = PrinterService.TryGetPrinterStatus(out string status);
@@ -953,18 +999,23 @@ namespace AssetTagPrinter
                     yPos = DrawLogoInPreview(g, _printStyleSettings, _printStyleSettings.LeftMargin, contentWidth, yPos);
 
                     int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
-                    using (Bitmap? barcode = BarcodeRenderer.CreateCode128Bitmap(asset.Barcode, barcodeWidth, 65))
+                    // Scale QR down to save sticker space (about 50% of computed barcode width)
+                    int qrSize = Math.Max(64, (int)(barcodeWidth * 0.5f));
+                    using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(asset.Barcode, qrSize))
                     {
                         if (barcode != null)
                         {
                             float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
-                            g.DrawImage(barcode, barcodeX, yPos, barcode.Width, barcode.Height);
-                            yPos += barcode.Height + 2;
-                            // Draw barcode value text below the barcode, centered
-                            float textWidth = g.MeasureString(asset.Barcode, bodyFont).Width;
-                            float textX = _printStyleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
-                            g.DrawString(asset.Barcode, bodyFont, blackBrush, textX, yPos);
-                            yPos += bodyFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
+                            float drawY = Math.Max(0f, yPos - 2f);
+                            g.DrawImage(barcode, barcodeX, drawY, barcode.Width, barcode.Height);
+                            yPos = drawY + barcode.Height + 1;
+                            using (Font smallBarcodeFont = new Font(bodyFont.FontFamily, Math.Max(6f, bodyFont.Size * 0.85f), bodyFont.Style))
+                            {
+                                float textWidth = g.MeasureString(asset.Barcode, smallBarcodeFont).Width;
+                                float textX = _printStyleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
+                                g.DrawString(asset.Barcode, smallBarcodeFont, blackBrush, textX, yPos);
+                                yPos += smallBarcodeFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
+                            }
                         }
                         else
                         {
@@ -1071,8 +1122,9 @@ namespace AssetTagPrinter
                 }
                 else
                 {
+                    // Show a tiny placeholder in the preview but keep the vertical gap minimal
                     g.DrawString("[Logo not found]", new Font("Arial", 8), Brushes.Gray, left, y);
-                    y += 20;
+                    y += 4; // small gap for preview only
                 }
             }
             catch (Exception ex)

@@ -140,7 +140,5 @@ namespace AssetTagPrinter
                 return "unknown";
             }
         }
-
-        // Help texts now embedded; no file I/O required.
     }
 }

@@ -166,18 +166,19 @@ namespace AssetTagPrinter
             "None",
             "Warehouse",
             "Acquisition Date"});
-            this.cmbCategory.Location = new System.Drawing.Point(92, 49);
+            this.cmbCategory.Location = new System.Drawing.Point(80, 49);
             this.cmbCategory.Name = "cmbCategory";
-            this.cmbCategory.Size = new System.Drawing.Size(200, 18);
+            this.cmbCategory.Size = new System.Drawing.Size(220, 18);
+            this.cmbCategory.DropDownWidth = 260;
             this.cmbCategory.TabIndex = 4;
             this.cmbCategory.SelectedIndexChanged += new System.EventHandler(this.cmbCategory_SelectedIndexChanged);
             // 
             // lblFilterValue
             // 
-            this.lblFilterValue.AutoSize = false;
+            this.lblFilterValue.AutoSize = true;
             this.lblFilterValue.Location = new System.Drawing.Point(310, 52);
             this.lblFilterValue.Name = "lblFilterValue";
-            this.lblFilterValue.Size = new System.Drawing.Size(60, 13);
+            this.lblFilterValue.Size = new System.Drawing.Size(72, 13);
             this.lblFilterValue.TabIndex = 12;
             this.lblFilterValue.TabStop = false;
             this.lblFilterValue.Text = "Filter by:";
@@ -189,7 +190,8 @@ namespace AssetTagPrinter
             this.cmbFilterValue.FormattingEnabled = true;
             this.cmbFilterValue.Location = new System.Drawing.Point(380, 49);
             this.cmbFilterValue.Name = "cmbFilterValue";
-            this.cmbFilterValue.Size = new System.Drawing.Size(120, 18);
+            this.cmbFilterValue.Size = new System.Drawing.Size(140, 18);
+            this.cmbFilterValue.DropDownWidth = 220;
             this.cmbFilterValue.TabIndex = 5;
             this.cmbFilterValue.Visible = false;
             this.cmbFilterValue.SelectedIndexChanged += new System.EventHandler(this.cmbFilterValue_SelectedIndexChanged);
