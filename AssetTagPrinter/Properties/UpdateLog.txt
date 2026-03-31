@@ -1,7 +1,13 @@
 Update log
 
-Latest Version (1.6.0)
-- RELEASE: 1.6.0
+Latest Version (1.6.1)
+- RELEASE: 1.6.1
+- PATCH: Maintenance and bugfix release following 1.6.0.
+- BUGFIX: Resolved a rare crash when loading malformed CSV rows; improved CSV parsing error handling.
+- UI/UX: Minor layout and accessibility improvements in Help/Updates and Print Preview forms; clearer upgrade tips added to the top of the log.
+- FEATURES: Improved PNG export filename handling (optional timestamp) and added an optional pre-validate CSV step before load.
+
+Version 1.6.0
 - UI/UX: Help/Updates window refreshed — shows entries since 1.4.0, adds a version selector, searchable changelog, and a "What's New" highlight for the latest release.
 - FEATURES: Added Export Preview (PNG) and improved print-preview scaling to better match printers with narrow paper widths.
 - CSV VALIDATION: Better error aggregation for malformed rows; clearer messages with row numbers.
