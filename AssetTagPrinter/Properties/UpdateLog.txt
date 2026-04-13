@@ -1,6 +1,15 @@
 Update log
 
-Latest Version (1.6.1)
+Latest Version (1.6.2)
+- RELEASE: 1.6.2
+- UI/UX: Acquisition date panel beside QR code now uses a two-line format ("Acq Date:" label above MM/YY), with improved font sizing and no truncation.
+- UI/UX: QR code and date panel layout rebalanced for better readability and consistency between preview and print.
+- UI/UX: Barcode number under QR removed for a cleaner look.
+- FEATURES: Toggle two-line acquisition date display.
+- BUGFIX: Fixed issues with date text being cut off or too small; improved adaptive font sizing and panel width logic.
+- MAINTENANCE: Refactored rendering logic for MainForm, PrintPreviewForm, and PrinterService for consistency.
+
+Version 1.6.1
 - RELEASE: 1.6.1
 - PATCH: Maintenance and bugfix release following 1.6.0.
 - BUGFIX: Resolved a rare crash when loading malformed CSV rows; improved CSV parsing error handling.

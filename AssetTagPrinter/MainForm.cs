@@ -1000,22 +1000,59 @@ namespace AssetTagPrinter
 
                     int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
                     // Scale QR down to save sticker space (about 50% of computed barcode width)
-                    int qrSize = Math.Max(64, (int)(barcodeWidth * 0.5f));
+                    const int minQrSize = 48;
+                    int qrSize = Math.Max(minQrSize, (int)(barcodeWidth * 0.5f));
+                    const float dateGap = 8f;
+                    const float minDatePanelWidth = 72f;
+                    int maxQrForSidePanel = (int)Math.Floor(Math.Max((float)minQrSize, contentWidth - minDatePanelWidth - dateGap));
+                    qrSize = Math.Max(minQrSize, Math.Min(qrSize, maxQrForSidePanel));
+                    string acqDateValue = GetAcquisitionDateValue(asset);
                     using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(asset.Barcode, qrSize))
                     {
                         if (barcode != null)
                         {
-                            float barcodeX = (previewBitmap.Width - barcode.Width) / 2f;
+                            float contentLeft = _printStyleSettings.LeftMargin;
+                            float contentRight = contentLeft + contentWidth;
+                            float barcodeX = contentLeft;
                             float drawY = Math.Max(0f, yPos - 2f);
+                            float datePanelX = barcodeX + barcode.Width + dateGap;
+                            float datePanelWidth = Math.Max(0f, contentRight - datePanelX);
+
                             g.DrawImage(barcode, barcodeX, drawY, barcode.Width, barcode.Height);
-                            yPos = drawY + barcode.Height + 1;
-                            using (Font smallBarcodeFont = new Font(bodyFont.FontFamily, Math.Max(6f, bodyFont.Size * 0.85f), bodyFont.Style))
+                            float qrBottom = drawY + barcode.Height;
+                            float dateBottom = qrBottom;
+
+                            string dateValueText = string.IsNullOrWhiteSpace(acqDateValue) ? "-" : acqDateValue;
+                            const string acqLabelText = "Acq Date:";
+                            using Font acqLabelBaseFont = new Font(secondaryFont.FontFamily, Math.Max(8f, secondaryFont.Size), FontStyle.Bold);
+                            using Font acqValueBaseFont = new Font(bodyFont.FontFamily, Math.Max(10f, bodyFont.Size * 1.25f), FontStyle.Bold);
+                            float acqLabelSize = GetBestFitSize(g, acqLabelText, acqLabelBaseFont, Math.Max(24f, datePanelWidth), 6f);
+                            float acqValueSize = GetBestFitSize(g, dateValueText, acqValueBaseFont, Math.Max(24f, datePanelWidth), 7f);
+                            using Font acqLabelFont = new Font(acqLabelBaseFont.FontFamily, acqLabelSize, acqLabelBaseFont.Style);
+                            using Font acqValueFont = new Font(acqValueBaseFont.FontFamily, acqValueSize, acqValueBaseFont.Style);
+
+                            float labelHeight = acqLabelFont.GetHeight(g);
+                            float valueHeight = acqValueFont.GetHeight(g);
+                            float blockHeight = labelHeight + valueHeight + 1f;
+                            float dateY = drawY + Math.Max(0f, (barcode.Height - blockHeight) / 2f);
+
+                            using var acqFormat = new StringFormat(StringFormat.GenericDefault)
                             {
-                                float textWidth = g.MeasureString(asset.Barcode, smallBarcodeFont).Width;
-                                float textX = _printStyleSettings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
-                                g.DrawString(asset.Barcode, smallBarcodeFont, blackBrush, textX, yPos);
-                                yPos += smallBarcodeFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
-                            }
+                                Alignment = StringAlignment.Near,
+                                LineAlignment = StringAlignment.Near,
+                                FormatFlags = StringFormatFlags.NoWrap,
+                                Trimming = StringTrimming.None
+                            };
+
+                            g.FillRectangle(Brushes.White, datePanelX, dateY, datePanelWidth, blockHeight + 2f);
+                            var previousTextHint = g.TextRenderingHint;
+                            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+                            g.DrawString(acqLabelText, acqLabelFont, blackBrush, datePanelX, dateY, acqFormat);
+                            float valueY = dateY + labelHeight + 1f;
+                            g.DrawString(dateValueText, acqValueFont, blackBrush, datePanelX, valueY, acqFormat);
+                            g.TextRenderingHint = previousTextHint;
+                            dateBottom = valueY + valueHeight;
+                            yPos = Math.Max(qrBottom, dateBottom) + _printStyleSettings.ExtraLineSpacing;
                         }
                         else
                         {
@@ -1026,6 +1063,11 @@ namespace AssetTagPrinter
 
                     for (int i = 4; i < lines.Count; i++)
                     {
+                        if (lines[i].IndexOf("Acq. Date:", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            continue;
+                        }
+
                         Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
                         g.DrawString(lines[i], lineFont, blackBrush, _printStyleSettings.LeftMargin, yPos);
                         yPos += lineFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
@@ -1067,6 +1109,81 @@ namespace AssetTagPrinter
             }
 
             return bodyFont;
+        }
+
+        private static float GetBestFitSize(Graphics g, string text, Font baseFont, float maxWidth, float minSize)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return baseFont.Size;
+            }
+
+            float size = baseFont.Size;
+            while (size > minSize)
+            {
+                using (Font probe = new Font(baseFont.FontFamily, size, baseFont.Style))
+                {
+                    var measured = g.MeasureString(text, probe, int.MaxValue);
+                    if (measured.Width <= maxWidth)
+                    {
+                        break;
+                    }
+                }
+
+                size -= 0.5f;
+            }
+
+            return Math.Max(minSize, size);
+        }
+
+        private static string GetAcquisitionDateValue(Asset asset)
+        {
+            string source = !string.IsNullOrWhiteSpace(asset.AcquisitionDate)
+                ? asset.AcquisitionDate.Trim()
+                : (asset.AcquisitionDateDisplay ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                return string.Empty;
+            }
+
+            var monthYearShort = System.Text.RegularExpressions.Regex.Match(source, @"^(?<month>\d{1,2})\s*[/\-]\s*(?<year>\d{2})$");
+            if (monthYearShort.Success
+                && int.TryParse(monthYearShort.Groups["month"].Value, out var m0)
+                && int.TryParse(monthYearShort.Groups["year"].Value, out var y0)
+                && m0 >= 1
+                && m0 <= 12)
+            {
+                return $"{m0:D2}/{y0:D2}";
+            }
+
+            if (DateTime.TryParse(source, out var parsedDate))
+            {
+                return parsedDate.ToString("MM/yy");
+            }
+
+            var yearMonth = System.Text.RegularExpressions.Regex.Match(source, @"^(?<year>\d{4})\s*[,/\-]\s*(?<month>\d{1,2})$");
+            if (yearMonth.Success
+                && int.TryParse(yearMonth.Groups["year"].Value, out var y1)
+                && int.TryParse(yearMonth.Groups["month"].Value, out var m1)
+                && m1 >= 1
+                && m1 <= 12)
+            {
+                return $"{m1:D2}/{(y1 % 100):D2}";
+            }
+
+            var monthYear = System.Text.RegularExpressions.Regex.Match(source, @"^(?<month>\d{1,2})\s*[/\-]\s*(?<year>\d{2,4})$");
+            if (monthYear.Success
+                && int.TryParse(monthYear.Groups["month"].Value, out var m2)
+                && int.TryParse(monthYear.Groups["year"].Value, out var y2)
+                && m2 >= 1
+                && m2 <= 12)
+            {
+                int twoDigitYear = y2 % 100;
+                return $"{m2:D2}/{twoDigitYear:D2}";
+            }
+
+            return source;
         }
 
         private static float DrawLogoInPreview(Graphics g, PrintStyleSettings settings, float left, float width, float y)

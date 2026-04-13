@@ -1,7 +1,16 @@
 # Asset Tag Printer - Setup Guide
 
+
 ## Overview
-Asset Tag Printer is a Windows application for printing barcode asset tags using POS receipt printers. It requires two separate components to be installed:
+Asset Tag Printer is a Windows application for printing barcode asset tags using POS receipt printers. 
+
+**New in 1.6.2:**
+- Acquisition date panel beside QR code now uses a two-line format ("Acq Date:" label above MM/YY), with improved font sizing and no truncation.
+- QR code and date panel layout rebalanced for better readability and consistency between preview and print.
+- Barcode number under QR removed for a cleaner look.
+- Toggle between one-line and two-line acquisition date display (see Print Style Editor).
+
+It requires two separate components to be installed:
 1. **POS.NET Framework** - for Windows/application layer
 2. **Printer Device Drivers** - for hardware communication
 

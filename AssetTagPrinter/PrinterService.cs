@@ -479,12 +479,11 @@ namespace AssetTagPrinter
                             90,
                             2,
                             PosPrinter.PrinterBarCodeCenter,
-                            BarCodeTextPosition.Below);
+                            BarCodeTextPosition.None);
                     }
                     else
                     {
-                        // Printer doesn't support barcode natively; print the barcode value as text so it's visible
-                        _printer.PrintNormal(PrinterStation.Receipt, barcodeValue + nl);
+                        _printer.PrintNormal(PrinterStation.Receipt, $"(Barcode unavailable){nl}");
                     }
                 }
                 catch (NotImplementedException)
@@ -591,8 +590,6 @@ namespace AssetTagPrinter
                     string labelText = string.IsNullOrWhiteSpace(asset.Label) ? string.Empty : asset.Label;
 
                     var blocks = new System.Collections.Generic.List<string> { headerText, addressText, contactText, string.Empty };
-                    string bv = barcodeValue ?? string.Empty;
-                    if (!string.IsNullOrWhiteSpace(bv)) blocks.Add(bv);
                     blocks.Add(string.Empty);
                     blocks.Add(refText);
                     if (!string.IsNullOrWhiteSpace(labelText)) blocks.Add(labelText);
@@ -762,24 +759,61 @@ namespace AssetTagPrinter
                         y += 4;
                         int barcodeWidth = (int)Math.Min(260f, Math.Max(160f, contentWidth - 10f));
                         // Reduce QR size to save paper (about 50% of the computed width)
-                        int qrSize = Math.Max(64, (int)(barcodeWidth * 0.5f));
+                        const int minQrSize = 48;
+                        int qrSize = Math.Max(minQrSize, (int)(barcodeWidth * 0.5f));
+                        const float dateGap = 8f;
+                        const float minDatePanelWidth = 72f;
+                        int maxQrForSidePanel = (int)Math.Floor(Math.Max((float)minQrSize, contentWidth - minDatePanelWidth - dateGap));
+                        qrSize = Math.Max(minQrSize, Math.Min(qrSize, maxQrForSidePanel));
+                        string acqDateValue = GetAcquisitionDateValue(asset);
                         using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(barcodeValue, qrSize))
                         {
                             if (barcode != null)
                             {
-                                // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
-                                float x = settings.LeftMargin + Math.Max(0f, (contentWidth - barcode.Width) / 2f);
+                                float contentLeft = settings.LeftMargin;
+                                float contentRight = contentLeft + contentWidth;
+                                float x = contentLeft;
                                 int drawY = Math.Max(0, (int)(y - 2f));
+                                float datePanelX = x + barcode.Width + dateGap;
+                                float datePanelWidth = Math.Max(0f, contentRight - datePanelX);
+
+                                // Draw at native bitmap size to avoid scaling artifacts that hurt scanning.
                                 e.Graphics.DrawImageUnscaled(barcode, (int)x, drawY);
-                                y = drawY + barcode.Height + 1;
-                                // Draw barcode value text below the QR using a slightly smaller font to save space
-                                using (Font smallBarcodeFont = new Font(body.FontFamily, Math.Max(6f, body.Size * 0.85f), body.Style))
+                                float qrBottom = drawY + barcode.Height;
+                                float dateBottom = qrBottom;
+
+                                string dateValueText = string.IsNullOrWhiteSpace(acqDateValue) ? "-" : acqDateValue;
+                                const string acqLabelText = "Acq Date:";
+                                using Font acqLabelBaseFont = new Font(secondary.FontFamily, Math.Max(8f, secondary.Size), FontStyle.Bold);
+                                using Font acqValueBaseFont = new Font(body.FontFamily, Math.Max(10f, body.Size * 1.25f), FontStyle.Bold);
+                                float acqLabelSize = GetBestFitSize(e.Graphics, acqLabelText, acqLabelBaseFont, Math.Max(24f, datePanelWidth), 6f);
+                                float acqValueSize = GetBestFitSize(e.Graphics, dateValueText, acqValueBaseFont, Math.Max(24f, datePanelWidth), 7f);
+                                using Font acqLabelFont = new Font(acqLabelBaseFont.FontFamily, acqLabelSize, acqLabelBaseFont.Style);
+                                using Font acqValueFont = new Font(acqValueBaseFont.FontFamily, acqValueSize, acqValueBaseFont.Style);
+
+                                float labelHeight = acqLabelFont.GetHeight(e.Graphics);
+                                float valueHeight = acqValueFont.GetHeight(e.Graphics);
+                                float blockHeight = labelHeight + valueHeight + 1f;
+                                float dateY = drawY + Math.Max(0f, (barcode.Height - blockHeight) / 2f);
+
+                                using var acqFormat = new StringFormat(StringFormat.GenericDefault)
                                 {
-                                    float textWidth = e.Graphics.MeasureString(barcodeValue, smallBarcodeFont).Width;
-                                    float textX = settings.LeftMargin + Math.Max(0f, (contentWidth - textWidth) / 2f);
-                                    e.Graphics.DrawString(barcodeValue, smallBarcodeFont, Brushes.Black, textX, y);
-                                    y += smallBarcodeFont.GetHeight(e.Graphics) + settings.ExtraLineSpacing;
-                                }
+                                    Alignment = StringAlignment.Near,
+                                    LineAlignment = StringAlignment.Near,
+                                    FormatFlags = StringFormatFlags.NoWrap,
+                                    Trimming = StringTrimming.None
+                                };
+
+                                e.Graphics.FillRectangle(Brushes.White, datePanelX, dateY, datePanelWidth, blockHeight + 2f);
+                                var previousTextHint = e.Graphics.TextRenderingHint;
+                                e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+                                e.Graphics.DrawString(acqLabelText, acqLabelFont, Brushes.Black, datePanelX, dateY, acqFormat);
+                                float valueY = dateY + labelHeight + 1f;
+                                e.Graphics.DrawString(dateValueText, acqValueFont, Brushes.Black, datePanelX, valueY, acqFormat);
+                                e.Graphics.TextRenderingHint = previousTextHint;
+                                dateBottom = valueY + valueHeight;
+
+                                y = Math.Max(qrBottom, dateBottom) + settings.ExtraLineSpacing;
                             }
                             else
                             {
@@ -791,6 +825,11 @@ namespace AssetTagPrinter
                         for (int i = 4; i < lines.Count; i++)
                         {
                             string line = lines[i];
+                            if (line.IndexOf("Acq. Date:", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                continue;
+                            }
+
                             Font lineFont = GetLineFont(i, header, secondary, body);
 
                             e.Graphics.DrawString(line, lineFont, Brushes.Black, settings.LeftMargin, y);
@@ -902,6 +941,56 @@ namespace AssetTagPrinter
             }
 
             return bodyFont;
+        }
+
+        private static string GetAcquisitionDateValue(Asset asset)
+        {
+            string source = !string.IsNullOrWhiteSpace(asset.AcquisitionDate)
+                ? asset.AcquisitionDate.Trim()
+                : (asset.AcquisitionDateDisplay ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                return string.Empty;
+            }
+
+            var monthYearShort = System.Text.RegularExpressions.Regex.Match(source, @"^(?<month>\d{1,2})\s*[/\-]\s*(?<year>\d{2})$");
+            if (monthYearShort.Success
+                && int.TryParse(monthYearShort.Groups["month"].Value, out var m0)
+                && int.TryParse(monthYearShort.Groups["year"].Value, out var y0)
+                && m0 >= 1
+                && m0 <= 12)
+            {
+                return $"{m0:D2}/{y0:D2}";
+            }
+
+            if (DateTime.TryParse(source, out var parsedDate))
+            {
+                return parsedDate.ToString("MM/yy");
+            }
+
+            var yearMonth = System.Text.RegularExpressions.Regex.Match(source, @"^(?<year>\d{4})\s*[,/\-]\s*(?<month>\d{1,2})$");
+            if (yearMonth.Success
+                && int.TryParse(yearMonth.Groups["year"].Value, out var y1)
+                && int.TryParse(yearMonth.Groups["month"].Value, out var m1)
+                && m1 >= 1
+                && m1 <= 12)
+            {
+                return $"{m1:D2}/{(y1 % 100):D2}";
+            }
+
+            var monthYear = System.Text.RegularExpressions.Regex.Match(source, @"^(?<month>\d{1,2})\s*[/\-]\s*(?<year>\d{2,4})$");
+            if (monthYear.Success
+                && int.TryParse(monthYear.Groups["month"].Value, out var m2)
+                && int.TryParse(monthYear.Groups["year"].Value, out var y2)
+                && m2 >= 1
+                && m2 <= 12)
+            {
+                int twoDigitYear = y2 % 100;
+                return $"{m2:D2}/{twoDigitYear:D2}";
+            }
+
+            return source;
         }
 
         public void Close()
