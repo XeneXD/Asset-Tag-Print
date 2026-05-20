@@ -977,7 +977,7 @@ namespace AssetTagPrinter
             }
 
             var asset = _previewAssets[_currentPreviewIndex];
-            
+
             try
             {
                 Bitmap previewBitmap = new Bitmap(280, 400);
@@ -1007,6 +1007,7 @@ namespace AssetTagPrinter
                     int maxQrForSidePanel = (int)Math.Floor(Math.Max((float)minQrSize, contentWidth - minDatePanelWidth - dateGap));
                     qrSize = Math.Max(minQrSize, Math.Min(qrSize, maxQrForSidePanel));
                     string acqDateValue = GetAcquisitionDateValue(asset);
+
                     using (Bitmap? barcode = BarcodeRenderer.CreateQrBitmap(asset.Barcode, qrSize))
                     {
                         if (barcode != null)
@@ -1061,6 +1062,16 @@ namespace AssetTagPrinter
                         }
                     }
 
+                    // Create a center-aligned layout format constraint for text block strings
+                    using var textCenterFormat = new StringFormat()
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Near
+                    };
+
+                    // Calculate the exact horizontal midpoint of our printable area width boundary
+                    float centerPointX = _printStyleSettings.LeftMargin + (contentWidth / 2f);
+
                     for (int i = 4; i < lines.Count; i++)
                     {
                         if (lines[i].IndexOf("Acq. Date:", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -1068,8 +1079,17 @@ namespace AssetTagPrinter
                             continue;
                         }
 
+                        // FIXED: Strip space padding characters so GDI+ calculates alignment based on visible text layout
+                        string cleanLineText = lines[i].Trim();
+                        if (string.IsNullOrEmpty(cleanLineText))
+                        {
+                            continue;
+                        }
+
                         Font lineFont = GetLineFont(i, headerFont, secondaryFont, bodyFont);
-                        g.DrawString(lines[i], lineFont, blackBrush, _printStyleSettings.LeftMargin, yPos);
+
+                        // FIXED: Render raw line contents precisely from the center coordinates
+                        g.DrawString(cleanLineText, lineFont, blackBrush, centerPointX, yPos, textCenterFormat);
                         yPos += lineFont.GetHeight(g) + _printStyleSettings.ExtraLineSpacing;
                     }
 
@@ -1084,7 +1104,7 @@ namespace AssetTagPrinter
                 {
                     picBoxTagPreview.Image.Dispose();
                 }
-                
+
                 picBoxTagPreview.Image = previewBitmap;
                 lblPreviewStatus.Text = $"Preview {_currentPreviewIndex + 1} of {_previewAssets.Count}";
                 btnPreviewPrevious.Enabled = _currentPreviewIndex > 0;
